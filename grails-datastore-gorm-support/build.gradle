@@ -5,7 +5,7 @@ dependencies {
 
     compileOnly "org.springframework:spring-orm"
     compileOnly "org.springframework:spring-webmvc"
-    compileOnly "org.grails:grails-web-url-mappings:"
+    compileOnly "org.grails:grails-web-url-mappings"
     compileOnly "org.grails:grails-web-common"
     compileOnly("org.hibernate:hibernate-core-jakarta:$hibernateVersion") {
         exclude group:'commons-logging', module:'commons-logging'
