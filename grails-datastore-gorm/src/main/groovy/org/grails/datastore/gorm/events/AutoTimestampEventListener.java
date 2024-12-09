@@ -45,9 +45,9 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
     public static final String DATE_CREATED_PROPERTY = "dateCreated";
     public static final String LAST_UPDATED_PROPERTY = "lastUpdated";
 
-    protected Map<String, Boolean> entitiesWithDateCreated = new ConcurrentHashMap<String, Boolean>();
-    protected Map<String, Boolean> entitiesWithLastUpdated = new ConcurrentHashMap<String, Boolean>();
-    protected Collection<String> uninitializedEntities = new ConcurrentLinkedQueue<String>();
+    protected Map<String, String> entitiesWithDateCreated = new ConcurrentHashMap<>();
+    protected Map<String, String> entitiesWithLastUpdated = new ConcurrentHashMap<>();
+    protected Collection<String> uninitializedEntities = new ConcurrentLinkedQueue<>();
     
     
     private TimestampProvider timestampProvider = new DefaultTimestampProvider();
@@ -80,8 +80,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
 
         if (event.getEventType() == EventType.PreInsert) {
             beforeInsert(event.getEntity(), event.getEntityAccess());
-        }
-        else if (event.getEventType() == EventType.PreUpdate) {
+        } else if (event.getEventType() == EventType.PreUpdate) {
             beforeUpdate(event.getEntity(), event.getEntityAccess());
         }
     }
@@ -96,82 +95,69 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
         initializeIfNecessary(entity, name);
         Class<?> dateCreatedType = null;
         Object timestamp = null;
-        if (hasDateCreated(name)) {
-            dateCreatedType = ea.getPropertyType(DATE_CREATED_PROPERTY);
+        String prop = getDateCreatedPropertyName(name);
+        if (prop != null) {
+            dateCreatedType = ea.getPropertyType(prop);
             timestamp = timestampProvider.createTimestamp(dateCreatedType);
-            ea.setProperty(DATE_CREATED_PROPERTY, timestamp);
+            ea.setProperty(prop, timestamp);
         }
-        if (hasLastUpdated(name)) {
-            Class<?> lastUpdateType = ea.getPropertyType(LAST_UPDATED_PROPERTY);
-            if(dateCreatedType == null || !lastUpdateType.isAssignableFrom(dateCreatedType)) {
+        prop = getLastUpdatedPropertyName(name);
+        if (prop != null) {
+            Class<?> lastUpdateType = ea.getPropertyType(prop);
+            if (dateCreatedType == null || !lastUpdateType.isAssignableFrom(dateCreatedType)) {
                 timestamp = timestampProvider.createTimestamp(lastUpdateType);
             }
-            ea.setProperty(LAST_UPDATED_PROPERTY, timestamp);
+            ea.setProperty(prop, timestamp);
         }
         return true;
     }
 
     private void initializeIfNecessary(PersistentEntity entity, String name) {
-        if(uninitializedEntities.contains(name)) {
+        if (uninitializedEntities.contains(name)) {
             storeDateCreatedAndLastUpdatedInfo(entity);
             uninitializedEntities.remove(name);
         }
     }
 
     public boolean beforeUpdate(PersistentEntity entity, EntityAccess ea) {
-        if (hasLastUpdated(entity.getName())) {
-            Class<?> lastUpdateType = ea.getPropertyType(LAST_UPDATED_PROPERTY);
+        String prop = getLastUpdatedPropertyName(entity.getName());
+        if (prop != null) {
+            Class<?> lastUpdateType = ea.getPropertyType(prop);
             Object timestamp = timestampProvider.createTimestamp(lastUpdateType);
-            ea.setProperty(LAST_UPDATED_PROPERTY, timestamp);
+            ea.setProperty(prop, timestamp);
         }
         return true;
     }
 
-    /**
-     * Here for binary compatibility. Deprecated.
-     *
-     * @deprecated Use {@link #hasLastUpdated(String)} instead
-     */
-    @Deprecated
-    protected boolean hasLastUpdated(PersistentEntity entity) {
-        return hasLastUpdated(entity.getName());
+    protected String getLastUpdatedPropertyName(String n) {
+        return entitiesWithLastUpdated.get(n);
     }
 
-    protected boolean hasLastUpdated(String n) {
-        return entitiesWithLastUpdated.containsKey(n) && entitiesWithLastUpdated.get(n);
-    }
-
-    /**
-     * Here for binary compatibility. Deprecated.
-     *
-     * @deprecated Use {@link #hasDateCreated(String)} instead
-     */
-    @Deprecated
-    protected boolean hasDateCreated(PersistentEntity entity) {
-        return hasDateCreated(entity.getName());
-    }
-
-    protected boolean hasDateCreated(String n) {
-        return entitiesWithDateCreated.containsKey(n)&& entitiesWithDateCreated.get(n);
+    protected String getDateCreatedPropertyName(String n) {
+        return entitiesWithDateCreated.get(n);
     }
 
     protected void storeDateCreatedAndLastUpdatedInfo(PersistentEntity persistentEntity) {
-        if(persistentEntity.isInitialized()) {
-
+        if (persistentEntity.isInitialized()) {
             ClassMapping<?> classMapping = persistentEntity.getMapping();
             Entity mappedForm = classMapping.getMappedForm();
-            if(mappedForm == null || mappedForm.isAutoTimestamp()) {
-                storeTimestampAvailability(entitiesWithDateCreated, persistentEntity, persistentEntity.getPropertyByName(DATE_CREATED_PROPERTY));
-                storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity, persistentEntity.getPropertyByName(LAST_UPDATED_PROPERTY));
+            if (mappedForm == null || mappedForm.isAutoTimestamp()) {
+                storeTimestampAvailability(entitiesWithDateCreated, persistentEntity,
+                        persistentEntity.getPropertyByName(mappedForm.getDateCreated() != null?
+                                mappedForm.getDateCreated() : DATE_CREATED_PROPERTY));
+                storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity,
+                        persistentEntity.getPropertyByName(mappedForm.getLastUpdated() != null?
+                                mappedForm.getLastUpdated() : LAST_UPDATED_PROPERTY));
             }
-        }
-        else {
+        } else {
             uninitializedEntities.add(persistentEntity.getName());
         }
     }
 
-    protected void storeTimestampAvailability(Map<String, Boolean> timestampAvailabilityMap, PersistentEntity persistentEntity, PersistentProperty<?> property) {
-        timestampAvailabilityMap.put(persistentEntity.getName(), property != null && timestampProvider.supportsCreating(property.getType()));
+    protected void storeTimestampAvailability(Map<String, String> timestampAvailabilityMap, PersistentEntity persistentEntity, PersistentProperty<?> property) {
+        if (property != null && timestampProvider.supportsCreating(property.getType())) {
+            timestampAvailabilityMap.put(persistentEntity.getName(), property.getName());
+        }
     }
 
     public void persistentEntityAdded(PersistentEntity entity) {
@@ -186,25 +172,25 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
         this.timestampProvider = timestampProvider;
     }
 
-    private void processAllEntries(final Set<Map.Entry<String, Boolean>> entries, final Runnable runnable)  {
-        Map<String, Boolean> originalValues = new LinkedHashMap<String, Boolean>();
-        for(Map.Entry<String, Boolean> entry: entries) {
+    private void processAllEntries(final Set<Map.Entry<String, String>> entries, final Runnable runnable)  {
+        Map<String, String> originalValues = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry: entries) {
             originalValues.put(entry.getKey(), entry.getValue());
-            entry.setValue(false);
+            entry.setValue(null);
         }
         runnable.run();
-        for(Map.Entry<String, Boolean> entry: entries) {
+        for (Map.Entry<String, String> entry: entries) {
             entry.setValue(originalValues.get(entry.getKey()));
         }
     }
 
-    private void processEntries(final List<Class> classes, Map<String, Boolean> entities, final Runnable runnable) {
-        Set<Map.Entry<String, Boolean>> entries = new HashSet<>();
+    private void processEntries(final List<Class> classes, Map<String, String> entities, final Runnable runnable) {
+        Set<Map.Entry<String, String>> entries = new HashSet<>();
         final List<String> classNames = new ArrayList<>(classes.size());
-        for(Class clazz: classes) {
+        for (Class clazz: classes) {
             classNames.add(clazz.getName());
         }
-        for (Map.Entry<String, Boolean> entry: entities.entrySet()) {
+        for (Map.Entry<String, String> entry: entities.entrySet()) {
             if (classNames.contains(entry.getKey())) {
                 entries.add(entry);
             }
@@ -238,7 +224,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
      * @param runnable The code to execute while the last updated listener is disabled
      */
     public void withoutLastUpdated(final Class clazz, final Runnable runnable)  {
-        ArrayList<Class> list = new ArrayList<Class>(1);
+        ArrayList<Class> list = new ArrayList<>(1);
         list.add(clazz);
         withoutLastUpdated(list, runnable);
     }
@@ -269,7 +255,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
      * @param runnable The code to execute while the date created listener is disabled
      */
     public void withoutDateCreated(final Class clazz, final Runnable runnable)  {
-        ArrayList<Class> list = new ArrayList<Class>(1);
+        ArrayList<Class> list = new ArrayList<>(1);
         list.add(clazz);
         withoutDateCreated(list, runnable);
     }
@@ -280,12 +266,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
      * @param runnable The code to execute while the timestamp listeners are disabled
      */
     public void withoutTimestamps(final Runnable runnable)  {
-        withoutDateCreated(new Runnable() {
-            @Override
-            public void run() {
-                withoutLastUpdated(runnable);
-            }
-        });
+        withoutDateCreated(() -> withoutLastUpdated(runnable));
     }
 
     /**
@@ -295,12 +276,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
      * @param runnable The code to execute while the timestamp listeners are disabled
      */
     public void withoutTimestamps(final List<Class> classes, final Runnable runnable)  {
-        withoutDateCreated(classes, new Runnable() {
-            @Override
-            public void run() {
-                withoutLastUpdated(classes, runnable);
-            }
-        });
+        withoutDateCreated(classes, () -> withoutLastUpdated(classes, runnable));
     }
 
     /**
@@ -310,12 +286,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
      * @param runnable The code to execute while the timestamp listeners are disabled
      */
     public void withoutTimestamps(final Class clazz, final Runnable runnable)  {
-        withoutDateCreated(clazz, new Runnable() {
-            @Override
-            public void run() {
-                withoutLastUpdated(clazz, runnable);
-            }
-        });
+        withoutDateCreated(clazz, () -> withoutLastUpdated(clazz, runnable));
     }
 
 }

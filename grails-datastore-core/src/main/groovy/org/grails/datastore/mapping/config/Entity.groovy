@@ -56,6 +56,9 @@ class Entity<P extends Property> {
      * @return Whether automatic time stamps should be applied to 'lastUpdate' and 'dateCreated' properties
      */
     boolean autoTimestamp = true
+    String dateCreated = null
+    String lastUpdated = null
+
     /**
      * @return Whether the entity should be autowired
      */
