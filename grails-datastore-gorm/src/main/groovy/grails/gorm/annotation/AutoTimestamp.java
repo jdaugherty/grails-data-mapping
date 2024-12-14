@@ -35,12 +35,12 @@ public @interface AutoTimestamp {
      * Enum to specify when auto-timestamping should occur.
      */
     enum EventType {
-        ON_INSERT,
-        ON_UPDATE
+        SAVE,
+        UPDATE
     }
 
     /**
      * When to apply auto-timestamping
      */
-    EventType value() default EventType.ON_UPDATE;
+    EventType value() default EventType.UPDATE;
 }
