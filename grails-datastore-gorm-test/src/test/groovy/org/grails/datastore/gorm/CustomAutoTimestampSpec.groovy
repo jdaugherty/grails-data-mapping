@@ -40,6 +40,6 @@ class CustomAutoTimestampSpec extends GormDatastoreSpec {
 class RecordCustom {
     Long id
     String name
-    @AutoTimestamp(SAVE) Date created
+    @AutoTimestamp(CREATED) Date created
     @AutoTimestamp Date modified
 }

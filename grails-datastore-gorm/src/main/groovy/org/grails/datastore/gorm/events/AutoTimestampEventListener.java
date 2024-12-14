@@ -170,7 +170,7 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
                         Field field = getFieldFromHierarchy(persistentEntity, property.getName());
                         if (field != null && field.isAnnotationPresent(AutoTimestamp.class)) {
                             AutoTimestamp autoTimestamp = field.getAnnotation(AutoTimestamp.class);
-                            if (autoTimestamp.value() == AutoTimestamp.EventType.UPDATE) {
+                            if (autoTimestamp.value() == AutoTimestamp.EventType.UPDATED) {
                                 storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity, property);
                             } else {
                                 storeTimestampAvailability(entitiesWithDateCreated, persistentEntity, property);
