@@ -21,8 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A property annotation used to enable automatic updates to time objects
- * upon gorm modification events
+ * A property annotation used to apply auto-timestamping on a field
+ * upon gorm insert and update events
  *
  * @author Scott Murphy Heiberg
  * @since 7.0
@@ -31,8 +31,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface AutoTimestamp {
     /**
-     * A qualifier boolean value that represents if update events
-     * should be updated as well. Setting value to false only updates on creation events.
+     * Whether to include auto-timestamping on update events.
+     * Setting value to false only performs auto-timestamping on insert events.
      */
     boolean value() default true;
 }
