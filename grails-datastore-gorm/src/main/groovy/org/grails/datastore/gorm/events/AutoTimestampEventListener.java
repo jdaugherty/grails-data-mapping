@@ -14,10 +14,12 @@
  */
 package org.grails.datastore.gorm.events;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import grails.gorm.annotation.AutoTimestamp;
 import org.grails.datastore.gorm.timestamp.DefaultTimestampProvider;
 import org.grails.datastore.gorm.timestamp.TimestampProvider;
 import org.grails.datastore.mapping.config.Entity;
@@ -45,13 +47,11 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
     public static final String DATE_CREATED_PROPERTY = "dateCreated";
     public static final String LAST_UPDATED_PROPERTY = "lastUpdated";
 
-    protected Map<String, String> entitiesWithDateCreated = new ConcurrentHashMap<>();
-    protected Map<String, String> entitiesWithLastUpdated = new ConcurrentHashMap<>();
+    protected Map<String, Set<String>> entitiesWithDateCreated = new ConcurrentHashMap<>();
+    protected Map<String, Set<String>> entitiesWithLastUpdated = new ConcurrentHashMap<>();
     protected Collection<String> uninitializedEntities = new ConcurrentLinkedQueue<>();
-    
-    
+
     private TimestampProvider timestampProvider = new DefaultTimestampProvider();
-    
 
     public AutoTimestampEventListener(final Datastore datastore) {
         super(datastore);
@@ -95,19 +95,23 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
         initializeIfNecessary(entity, name);
         Class<?> dateCreatedType = null;
         Object timestamp = null;
-        String prop = getDateCreatedPropertyName(name);
-        if (prop != null) {
-            dateCreatedType = ea.getPropertyType(prop);
-            timestamp = timestampProvider.createTimestamp(dateCreatedType);
-            ea.setProperty(prop, timestamp);
-        }
-        prop = getLastUpdatedPropertyName(name);
-        if (prop != null) {
-            Class<?> lastUpdateType = ea.getPropertyType(prop);
-            if (dateCreatedType == null || !lastUpdateType.isAssignableFrom(dateCreatedType)) {
-                timestamp = timestampProvider.createTimestamp(lastUpdateType);
+        Set<String> props = getDateCreatedPropertyNames(name);
+        if (props != null) {
+            for (String prop : props) {
+                dateCreatedType = ea.getPropertyType(prop);
+                timestamp = timestampProvider.createTimestamp(dateCreatedType);
+                ea.setProperty(prop, timestamp);
             }
-            ea.setProperty(prop, timestamp);
+        }
+        props = getLastUpdatedPropertyNames(name);
+        if (props != null) {
+            for (String prop : props) {
+                Class<?> lastUpdateType = ea.getPropertyType(prop);
+                if (dateCreatedType == null || !lastUpdateType.isAssignableFrom(dateCreatedType)) {
+                    timestamp = timestampProvider.createTimestamp(lastUpdateType);
+                }
+                ea.setProperty(prop, timestamp);
+            }
         }
         return true;
     }
@@ -120,43 +124,70 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
     }
 
     public boolean beforeUpdate(PersistentEntity entity, EntityAccess ea) {
-        String prop = getLastUpdatedPropertyName(entity.getName());
-        if (prop != null) {
-            Class<?> lastUpdateType = ea.getPropertyType(prop);
-            Object timestamp = timestampProvider.createTimestamp(lastUpdateType);
-            ea.setProperty(prop, timestamp);
+        Set<String> props = getLastUpdatedPropertyNames(entity.getName());
+        if (props != null) {
+            for (String prop : props) {
+                Class<?> lastUpdateType = ea.getPropertyType(prop);
+                Object timestamp = timestampProvider.createTimestamp(lastUpdateType);
+                ea.setProperty(prop, timestamp);
+            }
         }
         return true;
     }
 
-    protected String getLastUpdatedPropertyName(String n) {
-        return entitiesWithLastUpdated.get(n);
+    protected Set<String> getLastUpdatedPropertyNames(String entityName) {
+        return entitiesWithLastUpdated.get(entityName);
     }
 
-    protected String getDateCreatedPropertyName(String n) {
-        return entitiesWithDateCreated.get(n);
+    protected Set<String> getDateCreatedPropertyNames(String entityName) {
+        return entitiesWithDateCreated.get(entityName);
+    }
+
+    private static Field getFieldFromHierarchy(PersistentEntity persistentEntity, String fieldName) {
+        Class<?> clazz = persistentEntity.getJavaClass();
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                persistentEntity = persistentEntity.getParentEntity();
+                clazz = persistentEntity == null? null : persistentEntity.getJavaClass();
+            }
+        }
+        return null;
     }
 
     protected void storeDateCreatedAndLastUpdatedInfo(PersistentEntity persistentEntity) {
         if (persistentEntity.isInitialized()) {
             ClassMapping<?> classMapping = persistentEntity.getMapping();
-            Entity mappedForm = classMapping.getMappedForm();
+            Entity<?> mappedForm = classMapping.getMappedForm();
             if (mappedForm == null || mappedForm.isAutoTimestamp()) {
-                storeTimestampAvailability(entitiesWithDateCreated, persistentEntity,
-                        persistentEntity.getPropertyByName(mappedForm.getDateCreated() != null?
-                                mappedForm.getDateCreated() : DATE_CREATED_PROPERTY));
-                storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity,
-                        persistentEntity.getPropertyByName(mappedForm.getLastUpdated() != null?
-                                mappedForm.getLastUpdated() : LAST_UPDATED_PROPERTY));
+                for (PersistentProperty<?> property : persistentEntity.getPersistentProperties()) {
+                    if (property.getName().equals(LAST_UPDATED_PROPERTY)) {
+                        storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity, property);
+                    } else if (property.getName().equals(DATE_CREATED_PROPERTY)) {
+                        storeTimestampAvailability(entitiesWithDateCreated, persistentEntity, property);
+                    } else {
+                        Field field = getFieldFromHierarchy(persistentEntity, property.getName());
+                        if (field != null && field.isAnnotationPresent(AutoTimestamp.class)) {
+                            AutoTimestamp autoTimestamp = field.getAnnotation(AutoTimestamp.class);
+                            if (autoTimestamp.value()) {
+                                storeTimestampAvailability(entitiesWithLastUpdated, persistentEntity, property);
+                            } else {
+                                storeTimestampAvailability(entitiesWithDateCreated, persistentEntity, property);
+                            }
+                        }
+                    }
+                }
             }
         } else {
             uninitializedEntities.add(persistentEntity.getName());
         }
     }
 
-    protected void storeTimestampAvailability(Map<String, String> timestampAvailabilityMap, PersistentEntity persistentEntity, PersistentProperty<?> property) {
+    protected void storeTimestampAvailability(Map<String, Set<String>> timestampAvailabilityMap, PersistentEntity persistentEntity, PersistentProperty<?> property) {
         if (property != null && timestampProvider.supportsCreating(property.getType())) {
-            timestampAvailabilityMap.put(persistentEntity.getName(), property.getName());
+            Set<String> timestampProperties = timestampAvailabilityMap.computeIfAbsent(persistentEntity.getName(), k -> new HashSet<>());
+            timestampProperties.add(property.getName());
         }
     }
 
@@ -172,25 +203,25 @@ public class AutoTimestampEventListener extends AbstractPersistenceEventListener
         this.timestampProvider = timestampProvider;
     }
 
-    private void processAllEntries(final Set<Map.Entry<String, String>> entries, final Runnable runnable)  {
-        Map<String, String> originalValues = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry: entries) {
+    private void processAllEntries(final Set<Map.Entry<String, Set<String>>> entries, final Runnable runnable)  {
+        Map<String, Set<String>> originalValues = new LinkedHashMap<>();
+        for (Map.Entry<String, Set<String>> entry: entries) {
             originalValues.put(entry.getKey(), entry.getValue());
             entry.setValue(null);
         }
         runnable.run();
-        for (Map.Entry<String, String> entry: entries) {
+        for (Map.Entry<String, Set<String>> entry: entries) {
             entry.setValue(originalValues.get(entry.getKey()));
         }
     }
 
-    private void processEntries(final List<Class> classes, Map<String, String> entities, final Runnable runnable) {
-        Set<Map.Entry<String, String>> entries = new HashSet<>();
+    private void processEntries(final List<Class> classes, Map<String, Set<String>> entities, final Runnable runnable) {
+        Set<Map.Entry<String, Set<String>>> entries = new HashSet<>();
         final List<String> classNames = new ArrayList<>(classes.size());
         for (Class clazz: classes) {
             classNames.add(clazz.getName());
         }
-        for (Map.Entry<String, String> entry: entities.entrySet()) {
+        for (Map.Entry<String, Set<String>> entry: entities.entrySet()) {
             if (classNames.contains(entry.getKey())) {
                 entries.add(entry);
             }

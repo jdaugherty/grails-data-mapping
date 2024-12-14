@@ -1,13 +1,15 @@
-package grails.gorm.tests
+package org.grails.datastore.gorm
 
+import grails.gorm.annotation.AutoTimestamp
+import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
 
-class CustomAutotimeStampSpec extends GormDatastoreSpec{
+class CustomAutoTimestampSpec extends GormDatastoreSpec {
 
     void "Test when the auto timestamp properties are customized, they are correctly set"() {
         when:"An entity is persisted"
             def r = new RecordCustom(name: "Test")
-            r.save(flush:true)
+            r.save(flush:true, failOnError:true)
             session.clear()
             r = RecordCustom.get(r.id)
 
@@ -23,8 +25,8 @@ class CustomAutotimeStampSpec extends GormDatastoreSpec{
             session.clear()
             r = RecordCustom.get(r.id)
 
-        then:"the custom lastUpdated property is updated and dateCreated is not"
-            r.modified != null && previousModified > r.modified
+            then:"the custom lastUpdated property is updated and dateCreated is not"
+            r.modified != null && previousModified < r.modified
             previousCreated == r.created
     }
     @Override
@@ -37,11 +39,6 @@ class CustomAutotimeStampSpec extends GormDatastoreSpec{
 class RecordCustom {
     Long id
     String name
-    Date created
-    Date modified
-
-    static mapping = {
-        dateCreated 'created'
-        lastUpdated 'modified'
-    }
+    @AutoTimestamp(false) Date created
+    @AutoTimestamp Date modified
 }
