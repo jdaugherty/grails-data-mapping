@@ -30,9 +30,17 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface AutoTimestamp {
+
     /**
-     * Whether to include auto-timestamping on update events.
-     * Setting value to false only performs auto-timestamping on insert events.
+     * Enum to specify when auto-timestamping should occur.
      */
-    boolean value() default true;
+    enum EventType {
+        ON_INSERT,
+        ON_UPDATE
+    }
+
+    /**
+     * When to apply auto-timestamping
+     */
+    EventType value() default EventType.ON_UPDATE;
 }

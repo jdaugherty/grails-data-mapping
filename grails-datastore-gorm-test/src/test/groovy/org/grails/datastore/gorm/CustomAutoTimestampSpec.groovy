@@ -1,6 +1,7 @@
 package org.grails.datastore.gorm
 
 import grails.gorm.annotation.AutoTimestamp
+import static grails.gorm.annotation.AutoTimestamp.EventType.*;
 import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
 
@@ -39,6 +40,6 @@ class CustomAutoTimestampSpec extends GormDatastoreSpec {
 class RecordCustom {
     Long id
     String name
-    @AutoTimestamp(false) Date created
+    @AutoTimestamp(ON_INSERT) Date created
     @AutoTimestamp Date modified
 }
