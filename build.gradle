@@ -48,6 +48,16 @@ allprojects {
                 url = 'https://repository.apache.org/content/repositories/snapshots'
             }
         }
+        if (System.getenv("GITHUB_MAVEN_PASSWORD") && !grailsVersion.endsWith('-SNAPSHOT')) {
+            System.out.println("Adding Grails Core Repo")
+            maven {
+                url = 'https://maven.pkg.github.com/grails/grails-core'
+                credentials {
+                    username = 'DOES_NOT_MATTER'
+                    password = System.getenv("GITHUB_MAVEN_PASSWORD")
+                }
+            }
+        }
     }
 
     configurations {
