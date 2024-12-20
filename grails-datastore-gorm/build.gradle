@@ -9,11 +9,11 @@ dependencies {
     compileOnlyApi("jakarta.el:jakarta.el-api:$jakartaElVersion")
     runtimeOnly "org.glassfish:jakarta.el:$jakartaElGlassfishImplVersion"
 
-    compileOnly("org.hibernate:hibernate-validator:$hibernateValidatorVersion")
+    compileOnly("org.hibernate.validator:hibernate-validator")
     compileOnly("org.springframework:spring-jdbc")
     compileOnly("org.springframework:spring-web")
     testImplementation("org.springframework:spring-jdbc")
-    testImplementation("org.hibernate:hibernate-validator:$hibernateValidatorVersion")
+    testImplementation("org.hibernate.validator:hibernate-validator")
     testRuntimeOnly("com.h2database:h2")
 }
 
