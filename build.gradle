@@ -118,7 +118,7 @@ subprojects {
 
     dependencies {
         api platform("org.grails:grails-bom:$grailsVersion")
-        api "jakarta.annotation:jakarta.annotation-api:$jakartaAnnotationApiVersion"
+        api "jakarta.annotation:jakarta.annotation-api"
         implementation "jakarta.validation:jakarta.validation-api"
         compileOnly "com.github.spotbugs:spotbugs-annotations"
 
