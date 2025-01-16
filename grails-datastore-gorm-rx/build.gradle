@@ -10,7 +10,7 @@ dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
     implementation 'org.apache.groovy:groovy'
 
-    api "io.reactivex:rxjava:$rxjavaVersion"
+    api "io.reactivex:rxjava"
     api project(":grails-datastore-gorm"), {
         exclude group:"org.grails", module:'grails-async'
         exclude group:"org.grails", module:'grails-datastore-core'
