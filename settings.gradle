@@ -40,7 +40,8 @@ include ("grails-datastore-core",
         'grails-datastore-gorm-test',
 
         // RX projects
-        'grails-datastore-gorm-rx',
+        // until this can be finished ported to grails 7, we are disabling
+        //'grails-datastore-gorm-rx',
 
         // Testing Support
         'grails-gorm-testing-support'
