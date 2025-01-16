@@ -1,40 +1,20 @@
 
-configurations {
-    build
-}
+apply plugin: 'groovy'
 
-dependencies {
-    build platform("org.grails:grails-bom:$grailsVersion")
-    build "org.apache.ant:ant-junit:1.10.12"
-    build "org.apache.ant:ant-nodeps:1.8.1"
-}
+tasks.register('testAll', TestReport) {
+    // Where to write the aggregated report
+    destinationDirectory = layout.buildDirectory.dir("reports/tests/test-results").get().asFile
 
-tasks.register('test') {
-    dependsOn childProjects.values()*.getTasksByName("test", true)
-    doLast {
-        def testReportsDir = project.layout.buildDirectory.dir('reports/tests')
-        if (testReportsDir.get().asFile.exists()) {
-            testReportsDir.get().asFile.deleteDir()
-        }
-        testReportsDir.get().asFile.mkdirs()
+    // Tell it to gather results from all subprojects' 'test' tasks
+    reportOn(subprojects*.tasks*.withType(Test))
 
-        // Aggregate the test results
-        ant.taskdef(
-                name: 'junitreport2',
-                classname: "org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator",
-                classpath: configurations.build.asPath
-        )
+    // Make sure all subprojects' tests have run before we aggregate
+    dependsOn(subprojects*.tasks*.withType(Test))
 
-        ant.junitreport2(todir: testReportsDir.get().asFile) {
-            subprojects.each {
-                def testResultsDir = project.layout.buildDirectory.dir('test-results')
-                if (testResultsDir.get().asFile.exists()) {
-                    fileset(dir: testResultsDir.get().asFile) {
-                        include(name: "TEST-*.xml")
-                    }
-                }
-            }
-            report(todir: testReportsDir.get().asFile)
-        }
+    // (Optional) Clean up the existing report directory before regenerating
+    doFirst {
+        delete destinationDir
     }
+
+    outputs.upToDateWhen { false }
 }
