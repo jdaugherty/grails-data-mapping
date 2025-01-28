@@ -1,0 +1,330 @@
+buildscript {
+    repositories {
+        maven { url "https://repo.grails.org/grails/core" }
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
+        classpath "org.asciidoctor:asciidoctor-gradle-jvm:$asciidoctorGradleVersion"
+        classpath "io.github.gradle-nexus:publish-plugin:$gradleNexusPublishPluginVersion"
+    }
+}
+
+logger.lifecycle "GORM VERSION = ${project.datastoreVersion}"
+
+group "org.grails"
+version project.projectVersion
+
+ext {
+    isCiBuild = project.hasProperty("isCiBuild") || System.getenv().get("CI") as Boolean
+    isBuildSnapshot = project.version.endsWith("-SNAPSHOT")
+    isReleaseVersion = !isBuildSnapshot
+    nexusUsername = System.getenv("SONATYPE_USERNAME") ?: project.hasProperty("sonatypeOssUsername") ? project.sonatypeOssUsername : ''
+    nexusPassword = System.getenv("SONATYPE_PASSWORD") ?: project.hasProperty("sonatypeOssPassword") ? project.sonatypeOssPassword : ''
+    isSnapshot = project.projectVersion.endsWith("-SNAPSHOT")
+    groovyVersion = System.getenv('CI_GROOVY_VERSION') ?: project.groovyVersion
+}
+
+ext."signing.keyId" = project.hasProperty("signing.keyId") ? project.getProperty('signing.keyId') : System.getenv('SIGNING_KEY')
+ext."signing.password" = project.hasProperty("signing.password") ? project.getProperty('signing.password') : System.getenv('SIGNING_PASSPHRASE')
+ext."signing.secretKeyRingFile" = project.hasProperty("signing.secretKeyRingFile") ? project.getProperty('signing.secretKeyRingFile') : "${System.properties['user.home']}${File.separator}.gnupg${File.separator}secring.gpg"
+
+if (isReleaseVersion) {
+    apply plugin: 'maven-publish'
+    apply plugin: "io.github.gradle-nexus.publish-plugin"
+
+    nexusPublishing {
+        repositories {
+            sonatype {
+                def ossUser = System.getenv("SONATYPE_USERNAME") ?: project.hasProperty("sonatypeOssUsername") ? project.sonatypeOssUsername : ''
+                def ossPass = System.getenv("SONATYPE_PASSWORD") ?: project.hasProperty("sonatypeOssPassword") ? project.sonatypeOssPassword : ''
+                def ossStagingProfileId = System.getenv("SONATYPE_STAGING_PROFILE_ID") ?: project.hasProperty("sonatypeOssStagingProfileId") ? project.sonatypeOssStagingProfileId : ''
+                nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
+                username = ossUser
+                password = ossPass
+                stagingProfileId = ossStagingProfileId
+            }
+        }
+    }
+}
+
+
+allprojects {
+
+    ext.groovyVersion = System.getenv('CI_GROOVY_VERSION') ?: project.groovyVersion
+
+    repositories {
+        mavenCentral()
+        maven { url = 'https://repo.grails.org/grails/core' }
+        maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+        if(isSnapshot) {
+            maven { url = 'https://repo.grails.org/grails/libs-snapshots-local' }
+        }
+        if(groovyVersion && groovyVersion.endsWith('-SNAPSHOT')) {
+            maven {
+                name = 'ASF Snapshot repo'
+                url = 'https://repository.apache.org/content/repositories/snapshots'
+            }
+        }
+//        mavenLocal() // do not commit uncommented, for local testing only
+        if (System.getenv("GITHUB_MAVEN_PASSWORD") && !grailsVersion.endsWith('-SNAPSHOT')) {
+            System.out.println("Adding Grails Core Repo for ${project.name}")
+            maven {
+                url = 'https://maven.pkg.github.com/grails/grails-core'
+                credentials {
+                    username = 'DOES_NOT_MATTER'
+                    password = System.getenv("GITHUB_MAVEN_PASSWORD")
+                }
+            }
+        }
+    }
+}
+
+subprojects { Project subproject ->
+    if (project.name.startsWith("examples")) {
+
+        apply plugin: 'groovy'
+
+        if(project.name.contains('grails3')) {
+
+            apply plugin:"org.grails.grails-web"
+            apply plugin:"org.grails.grails-gsp"
+        }
+
+        if (project.name == "examples-test-data-service") {
+            apply plugin:"org.grails.grails-web"
+        }
+
+        dependencies {
+            testImplementation "io.micrometer:micrometer-core:latest.integration"
+            testImplementation "org.hibernate.validator:hibernate-validator"
+            testImplementation "org.apache.groovy:groovy-test-junit5"
+            testImplementation "org.spockframework:spock-core", { transitive = false }
+            testImplementation "org.junit.jupiter:junit-jupiter-api"
+            testImplementation "org.junit.platform:junit-platform-runner"
+            testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+        }
+
+        tasks.withType(Test) {
+            useJUnitPlatform()
+            testLogging {
+                showStandardStreams = true
+                exceptionFormat = 'full'
+            }
+        }
+
+        tasks.withType(Jar).configureEach {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
+
+        return
+    }
+
+    boolean isPluginProject = project.name.endsWith("-plugin") && (project.name.startsWith("grails") || project.name.startsWith("rx-"))
+    boolean isGrails3PluginProject = project.name.endsWith("-plugin")
+
+    ext {
+        projectInfo = new PublishingConvention(project)
+        pomInfo = {
+            delegate.name projectInfo.projectName
+            delegate.description projectInfo.projectDescription
+            delegate.url projectInfo.projectURL
+
+            delegate.licenses {
+                delegate.license {
+                    delegate.name 'The Apache Software License, Version 2.0'
+                    delegate.url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    delegate.distribution 'repo'
+                }
+            }
+
+            delegate.scm {
+                delegate.url projectInfo.projectVcsUrl
+                delegate.connection projectInfo.projectVcsUrl
+                delegate.developerConnection projectInfo.projectVcsUrl
+            }
+
+
+            delegate.developers {
+                delegate.developer {
+                    delegate.id 'graemerocher'
+                    delegate.name 'Graeme Rocher'
+                }
+                delegate.developer {
+                    delegate.id 'jeffscottbrown'
+                    delegate.name 'Jeff Brown'
+                }
+                delegate.developer {
+                    delegate.id 'burtbeckwith'
+                    delegate.name 'Burt Beckwith'
+                }
+            }
+
+        }
+    }
+
+    apply plugin: 'groovy'
+
+    if (isPluginProject) {
+        group "org.grails.plugins"
+        version(rootProject.version)
+    } else {
+        group "org.grails"
+        version rootProject.version
+    }
+
+    if (project.name == 'docs') {
+        return
+    }
+
+    if (isGrails3PluginProject) {
+        apply plugin: "org.grails.grails-plugin"
+    } else {
+        apply plugin: "groovy"
+    }
+
+    apply plugin: "java-library"
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+
+    if (project.name == "examples-test-data-service") {
+        apply plugin:"org.grails.plugins.views-json"
+    }
+
+    compileJava.options.release = 17
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    dependencies {
+        api "org.apache.groovy:groovy"
+        api "org.apache.groovy:groovy-templates"
+
+        testImplementation "org.apache.groovy:groovy-json"
+        testImplementation "org.apache.groovy:groovy-templates"
+        testImplementation "org.apache.groovy:groovy-test-junit5"
+        testImplementation "org.spockframework:spock-core", { transitive = false }
+        testImplementation "org.junit.jupiter:junit-jupiter-api"
+        testImplementation "org.junit.platform:junit-platform-runner"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    }
+
+    publishing {
+
+        if (isBuildSnapshot) {
+            repositories {
+                maven {
+                    credentials {
+                        def u = System.getenv("ARTIFACTORY_USERNAME") ?: project.hasProperty("artifactoryPublishUsername") ? project.artifactoryPublishUsername : ''
+                        def p = System.getenv("ARTIFACTORY_PASSWORD") ?: project.hasProperty("artifactoryPublishPassword") ? project.artifactoryPublishPassword : ''
+                        username = u
+                        password = p
+                    }
+                    if (isGrails3PluginProject) {
+                        url "https://repo.grails.org/grails/plugins3-snapshots-local"
+                    } else {
+                        url "https://repo.grails.org/grails/libs-snapshots-local"
+                    }
+                }
+            }
+        }
+
+        publications {
+            maven(MavenPublication) {
+
+                pom {
+                    name = projectInfo.projectName
+                    description = projectInfo.projectDescription
+                    url = projectInfo.projectURL
+
+                    licenses {
+                        license {
+                            name = 'The Apache Software License, Version 2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution = 'repo'
+                        }
+                    }
+
+                    scm {
+                        url = 'scm:git@github.com:grails/gorm-mongodb.git'
+                        connection = 'scm:git@github.com:grails/gorm-mongodb.git'
+                        developerConnection = 'scm:git@github.com:grails/gorm-mongodb.git'
+                    }
+
+                    developers {
+                        developer {
+                            id = 'puneetbehl'
+                            name = 'Puneet Behl'
+                            email = 'behlp@objectcomputing.com'
+                        }
+                    }
+                }
+
+                artifactId projectInfo.projectArtifactId
+                from components.java
+
+                afterEvaluate {
+                    if (isGrails3PluginProject) {
+                        artifact source:"${sourceSets.main.groovy.getClassesDirectory().get().getAsFile()}/META-INF/grails-plugin.xml",
+                                classifier:"plugin",
+                                extension:'xml'
+                    }
+                }
+
+                pom.withXml {
+                    def xml = asNode()
+                    def dependency = xml.dependencies.find { dep -> dep.artifactId == 'slf4j-simple' }
+                    dependency?.optional = true
+                }
+            }
+        }
+    }
+
+    afterEvaluate {
+        signing {
+            required { isReleaseVersion }
+            sign publishing.publications.maven
+        }
+    }
+
+    tasks.withType(Sign) {
+        onlyIf { isReleaseVersion }
+    }
+
+    //do not generate extra load on Nexus with new staging repository if signing fails
+    tasks.withType(io.github.gradlenexus.publishplugin.InitializeNexusStagingRepository).configureEach {
+        shouldRunAfter(tasks.withType(Sign))
+    }
+}
+
+class PublishingConvention {
+    Project project
+
+    String projectArtifactId
+    String projectName = 'GORM for MongoDB'
+    String projectDescription = 'Provides a GORM Object Mapping implementations for the MongodB Document Database'
+    String projectURL = 'https://gorm.grails.org/latest/mongodb'
+    String projectIssueTrackerUrl = 'https://github.com/grails/gorm-mongodb/issues'
+    String projectVcsUrl = 'https://github.com/grails/gorm-mongodb'
+
+    PublishingConvention(Project project) {
+        this.project = project
+
+        String name = project.name
+        if(name.startsWith('grails') && name.endsWith('-plugin')) {
+            name = 'mongodb'
+        }
+        else if(name.startsWith('rx') && name.endsWith('-plugin')) {
+            name = 'rx-mongodb'
+            projectName = 'RxGORM for MongoDB'
+        }
+        else if(name.endsWith('json-templates')) {
+            projectName = 'Grails Views'
+            projectDescription = "Provides JSON Views for MongoDB to the Grails framework."
+        }
+        projectArtifactId = name
+    }
+}
+

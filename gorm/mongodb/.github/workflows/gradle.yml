@@ -1,0 +1,91 @@
+name: Java CI
+on:
+  push:
+    branches:
+      - '[6-9]+.[0-9]+.x'
+  pull_request:
+    branches:
+      - '[6-9]+.[0-9]+.x'
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Snapshot information (e.g. New Core Snapshot Tue Dec 15 00:07:18 UTC 2020 f212f54)'
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      WORKSPACE: ${{ github.workspace }}
+      GRADLE_OPTS: -Xmx1500m -Dfile.encoding=UTF-8
+    strategy:
+      matrix:
+        mongodb-version: ['4.4', '5.0', '6.0', '7.0.14' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: liberica
+          java-version: '17'
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+      - name: Run Build
+        uses: gradle/gradle-build-action@v3
+        env:
+          GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+          GITHUB_MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          arguments: build
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: [build]
+    env:
+      WORKSPACE: ${{ github.workspace }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: liberica
+        java-version: '17'
+    - name: Publish to repo.grails.org
+      id: publish
+      uses: gradle/gradle-build-action@v3
+      env:
+        GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+      with:
+        arguments: -Dorg.gradle.internal.publish.checksums.insecure=true publish
+    - name: Build Docs
+      id: docs
+      if: steps.build.outcome == 'success'
+      uses: gradle/gradle-build-action@v3
+      env:
+        GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+      with:
+        arguments: docs:docs
+    - name: Determine docs target repository
+      if: steps.docs.outcome == 'success'
+      uses: haya14busa/action-cond@v1
+      id: docs_target
+      with:
+        cond: ${{ github.repository == 'grails/gorm-mongodb' }}
+        if_true: "grails/grails-data-mapping"
+        if_false: ${{ github.repository }}
+    - name: Publish to Github Pages
+      if: steps.docs.outcome == 'success'
+      uses: grails/github-pages-deploy-action@main
+      env:
+        TARGET_REPOSITORY: ${{ steps.docs_target.outputs.value }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: docs/build/docs
+        DOC_SUB_FOLDER: mongodb
+        DOC_FOLDER: gh-pages
+        COMMIT_EMAIL: 'grails-build@users.noreply.github.com'
+        COMMIT_NAME: 'grails-build'

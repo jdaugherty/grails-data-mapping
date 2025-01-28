@@ -1,0 +1,5 @@
+dependencies {
+    implementation platform("org.grails:grails-bom:$grailsVersion")
+    api "org.grails:grails-datastore-gorm"
+    api "org.mongodb:bson"
+}

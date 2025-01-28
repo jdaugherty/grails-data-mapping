@@ -1,0 +1,14 @@
+apply plugin: 'org.springframework.boot'
+
+ext['groovy.version'] = "$groovyVersion"
+
+dependencies {
+    implementation platform("org.grails:grails-bom:$grailsVersion")
+
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.mongodb:mongodb-driver-sync"
+    implementation project(":gorm-mongodb-spring-boot")
+
+    testImplementation"org.springframework.boot:spring-boot-starter-test"
+    testImplementation"org.spockframework:spock-core"
+}

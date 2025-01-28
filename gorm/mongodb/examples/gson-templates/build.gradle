@@ -1,0 +1,51 @@
+plugins {
+    id 'application'
+    id 'groovy'
+    id 'org.grails.grails-gsp'
+    id 'org.grails.grails-web'
+}
+
+group = 'functional.tests'
+
+dependencies {
+    implementation platform("org.grails:grails-bom:$grailsVersion")
+
+    implementation 'org.grails.plugins:views-json'
+    implementation 'org.grails.plugins:views-markup'
+
+    implementation 'org.grails:grails-core'
+    implementation 'org.grails:grails-logging'
+    implementation 'org.grails:grails-web-boot'
+
+    implementation 'org.grails:grails-plugin-databinding'
+    implementation 'org.grails:grails-plugin-i18n'
+    implementation 'org.grails:grails-plugin-interceptors'
+    implementation 'org.grails:grails-plugin-rest'
+    implementation 'org.grails:grails-plugin-services'
+    implementation 'org.grails:grails-plugin-url-mappings'
+    implementation 'org.grails:grails-plugin-validation'
+
+    implementation 'org.grails.plugins:gsp'
+    implementation 'org.grails.plugins:hibernate5'
+    implementation project(':grails-datastore-gorm-mongodb')
+
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat'
+
+    compileOnly 'jakarta.servlet:jakarta.servlet-api' // Provided by Tomcat
+
+    runtimeOnly project(':views-json-templates')
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.apache.tomcat:tomcat-jdbc'
+    runtimeOnly 'com.bertramlabs.plugins:asset-pipeline-grails'
+
+    testImplementation 'org.grails:views-json-testing-support'
+    testImplementation 'org.grails:grails-testing-support'
+
+    integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    integrationTestImplementation 'io.micronaut:micronaut-http-client:4.6.5'
+    integrationTestImplementation 'io.micronaut:micronaut-jackson-databind:4.6.5'
+}
+
+compileJava.options.release = 17
