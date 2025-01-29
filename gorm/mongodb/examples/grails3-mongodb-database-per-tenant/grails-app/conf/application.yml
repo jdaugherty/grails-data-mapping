@@ -2,7 +2,7 @@
 grails:
     profile: web
     codegen:
-        defaultPackage: "functional.tests"
+        defaultPackage: "databasepertenant.tests"
 info:
     app:
         name: '@info.app.name@'
@@ -24,11 +24,11 @@ grails:
   mongodb:
     # urls will be set by Application.groovy for the test container
     #url: mongodb://localhost/mydb
-    connections:
-      test1:
-        url: mongodb://localhost/test1Db
-      test2:
-        url: mongodb://localhost/test2Db
+#    connections:
+#      test1:
+#        url: mongodb://localhost/test1Db
+#      test2:
+#        url: mongodb://localhost/test2Db
     options:
       maxWaitTime: 10000
 ---

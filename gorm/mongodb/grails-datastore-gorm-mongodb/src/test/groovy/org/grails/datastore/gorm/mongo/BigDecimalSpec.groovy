@@ -3,9 +3,7 @@ package org.grails.datastore.gorm.mongo
 import grails.gorm.annotation.Entity
 import grails.gorm.tests.GormDatastoreSpec
 import grails.mongodb.MongoEntity
-import org.bson.Document
 import org.bson.types.Decimal128
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 
 /**

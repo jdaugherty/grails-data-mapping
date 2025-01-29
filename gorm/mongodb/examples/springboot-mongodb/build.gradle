@@ -3,7 +3,7 @@ plugins {
     id 'org.springframework.boot'
 }
 
-group = 'examples'
+group = 'example'
 
 apply plugin: 'org.springframework.boot'
 

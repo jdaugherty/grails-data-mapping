@@ -2,7 +2,7 @@
 grails:
     profile: web
     codegen:
-        defaultPackage: "functional.tests"
+        defaultPackage: "mongofunctional.tests"
 info:
     app:
         name: '@info.app.name@'

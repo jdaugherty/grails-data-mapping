@@ -4,7 +4,7 @@ plugins {
     id 'org.grails.grails-web'
 }
 
-group = 'functional.tests'
+group = 'gsontemplates.tests'
 
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")

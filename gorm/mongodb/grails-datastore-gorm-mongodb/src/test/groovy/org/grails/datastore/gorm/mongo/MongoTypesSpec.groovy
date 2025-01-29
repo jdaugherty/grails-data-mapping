@@ -6,9 +6,6 @@ import org.bson.Document
 import org.bson.types.Binary
 import org.bson.types.ObjectId
 
-import com.mongodb.BasicDBObject
-import com.mongodb.DBObject
-
 class MongoTypesSpec extends GormDatastoreSpec {
 
     void "Test that an entity can save and load native mongo types"() {

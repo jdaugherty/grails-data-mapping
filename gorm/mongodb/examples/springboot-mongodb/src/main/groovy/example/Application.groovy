@@ -14,6 +14,7 @@ class Application implements CommandLineRunner {
         try (
                 MongoDBContainer dbContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
         ) {
+
             dbContainer.start()
 
             System.setProperty('spring.data.mongodb.uri', dbContainer.getReplicaSetUrl('myDb'))

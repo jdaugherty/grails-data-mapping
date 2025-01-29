@@ -31,7 +31,6 @@ class CountMethodSpec extends Specification {
 
     void "test count method"() {
         given:"some test data "
-        CountTest.DB.drop()
         CountTest.withNewSession {
             new CountTest(name: "foo").save()
             new CountTest(name: "bar").save(flush:true)

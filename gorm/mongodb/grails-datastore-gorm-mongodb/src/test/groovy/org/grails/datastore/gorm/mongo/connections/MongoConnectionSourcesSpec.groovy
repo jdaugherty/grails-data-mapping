@@ -1,14 +1,12 @@
 package org.grails.datastore.gorm.mongo.connections
 
-import com.mongodb.client.MongoClient
-import org.bson.Document
 import org.grails.datastore.mapping.core.Session
 import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoSettings
 import org.grails.datastore.mapping.mongo.connections.MongoConnectionSources
 import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
-import spock.lang.AutoCleanup
-import spock.lang.Shared
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.Specification
 
 /**
@@ -16,9 +14,13 @@ import spock.lang.Specification
  */
 class MongoConnectionSourcesSpec extends Specification {
 
-    @Shared @AutoCleanup MongoDatastore datastore
+    MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
 
-    void setupSpec() {
+    void setup() {
+        mongoDBContainer.start()
+        System.setProperty(MongoSettings.SETTING_HOST, mongoDBContainer.getHost())
+        System.setProperty(MongoSettings.SETTING_PORT, mongoDBContainer.getMappedPort(27017).toString())
         Map config = [
                 "grails.gorm.connectionSourcesClass"          : MongoConnectionSources,
                 "grails.gorm.multiTenancy.mode"               :"DATABASE",
@@ -36,12 +38,12 @@ class MongoConnectionSourcesSpec extends Specification {
         this.datastore = new MongoDatastore(config, CompanyB)
     }
 
-    void "Test persist and retrieve entities with multi tenancy"() {
-        setup:
-        CompanyB.eachTenant {
-            CompanyB.DB.drop()
-        }
+    void cleanup() {
+        datastore.close()
+        mongoDBContainer.stop()
+    }
 
+    void "Test persist and retrieve entities with multi tenancy"() {
         when:"A tenant id is present"
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "test1")
 

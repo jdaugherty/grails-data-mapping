@@ -28,12 +28,14 @@ class MongoDbDataStoreSpringInitializerSpec extends Specification{
 
     @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
 
-    void setupSpec() {
+    // Due to database drops, we'll have to restart the container after every test
+    void setup() {
         mongoDBContainer.start()
-        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME))
+        System.setProperty('grails.mongodb.host', mongoDBContainer.getHost())
+        System.setProperty('grails.mongodb.port', mongoDBContainer.getMappedPort(27017).toString())
     }
 
-    void cleanupSpec() {
+    void cleanup() {
         mongoDBContainer.stop()
     }
 
@@ -42,7 +44,7 @@ class MongoDbDataStoreSpringInitializerSpec extends Specification{
             def initializer = new MongoDbDataStoreSpringInitializer(Person)
             def applicationContext = initializer.configure()
             def mongo = applicationContext.getBean(MongoClient)
-            mongo.getDatabase(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME).drop()
+//            mongo.getDatabase(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME).drop()
 
         then:"GORM for MongoDB is initialized correctly"
             Person.count() == 0
@@ -116,7 +118,6 @@ class MongoDbDataStoreSpringInitializerSpec extends Specification{
         given:"the initializer used to setup GORM for MongoDB"
             def initializer = new MongoDbDataStoreSpringInitializer(Person)
             initializer.configure()
-            Person.DB.drop()
 
         when:"we try to persist an invalid object"
             def p = new Person().save(flush:true)
@@ -146,7 +147,6 @@ class MongoDbDataStoreSpringInitializerSpec extends Specification{
 
         initializer.configureForBeanDefinitionRegistry(applicationContext)
         applicationContext.refresh()
-        Person.DB.drop()
 
         when:"we persist an object with a custom type "
         def birthday = new Birthday(new Date())
@@ -166,7 +166,6 @@ class MongoDbDataStoreSpringInitializerSpec extends Specification{
 
         initializer.configureForBeanDefinitionRegistry(applicationContext)
         applicationContext.refresh()
-        Person.DB.drop()
 
         when:"we persist an object with a custom type "
         def birthday = new Birthday(new Date())

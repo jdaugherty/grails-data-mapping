@@ -2,7 +2,6 @@ package org.grails.datastore.gorm.mongo
 
 import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
-import groovy.transform.CompileStatic
 
 /**
  * Created by graemerocher on 20/04/16.

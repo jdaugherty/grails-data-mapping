@@ -8,7 +8,7 @@ import org.bson.types.ObjectId
 /**
  * @author Graeme Rocher
  */
-class BasicArraySpec extends GormDatastoreSpec{
+class BasicArraySpec extends GormDatastoreSpec {
 
     void "Test that arrays are saved correctly"() {
         when:"An entity with an array is saved"

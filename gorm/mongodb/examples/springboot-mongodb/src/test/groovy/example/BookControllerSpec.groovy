@@ -19,18 +19,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 class BookControllerSpec extends Specification {
 
-    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
-    @Shared @AutoCleanup MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    MongoDatastore datastore
 
     BookController bookController = new BookController(bookService: datastore.getService(BookService))
 
-    void setupSpec() {
+    void setup() {
         mongoDBContainer.start()
         System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl('myDb'))
         datastore = new MongoDatastore(getClass().getPackage())
     }
 
-    void cleanupSpec() {
+    void cleanup() {
+        datastore.close()
         mongoDBContainer.stop()
     }
 
@@ -38,7 +39,6 @@ class BookControllerSpec extends Specification {
     void "test find by title"() {
         given:
         def mockMvc = MockMvcBuilders.standaloneSetup(bookController).build()
-        Book.DB.drop()
         Book.saveAll(new Book(title: "The Stand"), new Book(title: "It"))
         datastore.currentSession.flush()
 

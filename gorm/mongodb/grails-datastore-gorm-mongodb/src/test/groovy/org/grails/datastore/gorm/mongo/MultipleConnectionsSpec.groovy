@@ -1,12 +1,12 @@
 package org.grails.datastore.gorm.mongo
 
 import grails.gorm.annotation.Entity
-import grails.gorm.tests.GormDatastoreSpec
 import grails.mongodb.MongoEntity
 import org.bson.types.ObjectId
 import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoSettings
-import spock.lang.Shared
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.Specification
 
 /**
@@ -14,9 +14,13 @@ import spock.lang.Specification
  */
 class MultipleConnectionsSpec extends Specification {
 
-    @Shared MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    MongoDatastore datastore
 
-    void setupSpec() {
+    void setup() {
+        mongoDBContainer.start()
+        System.setProperty(MongoSettings.SETTING_HOST, mongoDBContainer.getHost())
+        System.setProperty(MongoSettings.SETTING_PORT, mongoDBContainer.getMappedPort(27017).toString())
         Map config = [
             (MongoSettings.SETTING_URL)        : "mongodb://localhost/defaultDb",
             (MongoSettings.SETTING_CONNECTIONS): [
@@ -31,22 +35,18 @@ class MultipleConnectionsSpec extends Specification {
         this.datastore = new MongoDatastore(config, getDomainClasses() as Class[])
     }
 
-    void cleanupSpec() {
+    void cleanup() {
         datastore.close()
+        mongoDBContainer.stop()
     }
 
     void "Test multiple datasources state"() {
-
         expect:
         CompanyA.DB.name == 'test1Db'
         CompanyA.test2.DB.name == 'test2Db'
     }
 
     void "Test query multiple data sources"() {
-        setup:
-        CompanyA.DB.drop()
-        CompanyA.test2.DB.drop()
-
         when:"An entity is saved"
         new CompanyA(name:"One").save(flush:true)
 

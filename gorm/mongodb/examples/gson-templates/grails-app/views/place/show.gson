@@ -1,5 +1,5 @@
 
-import functional.tests.Place
+import gsontemplates.tests.Place
 
 model {
     Place place

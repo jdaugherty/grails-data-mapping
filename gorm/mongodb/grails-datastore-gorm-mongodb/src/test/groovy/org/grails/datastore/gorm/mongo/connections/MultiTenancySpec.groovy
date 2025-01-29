@@ -11,6 +11,8 @@ import org.grails.datastore.mapping.mongo.config.MongoSettings
 import org.grails.datastore.mapping.multitenancy.AllTenantsResolver
 import org.grails.datastore.mapping.multitenancy.exceptions.TenantNotFoundException
 import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -20,26 +22,27 @@ import static com.mongodb.client.model.Filters.*;
  */
 class MultiTenancySpec extends Specification {
 
-    @Shared @AutoCleanup MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    MongoDatastore datastore
 
-    void setupSpec() {
+    void setup() {
+        mongoDBContainer.start()
+        System.setProperty(MongoSettings.SETTING_HOST, mongoDBContainer.getHost())
+        System.setProperty(MongoSettings.SETTING_PORT, mongoDBContainer.getMappedPort(27017).toString())
         Map config = [
                 "grails.gorm.multiTenancy.mode"               :"DISCRIMINATOR",
                 "grails.gorm.multiTenancy.tenantResolverClass": MyResolver,
                 (MongoSettings.SETTING_URL)                   : "mongodb://localhost/defaultDb",
         ]
         this.datastore = new MongoDatastore(config, getDomainClasses() as Class[])
-    }
-
-    void setup() {
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
     }
 
+    void cleanup() {
+        mongoDBContainer.stop()
+    }
 
     void "Test persist and retrieve entities with multi tenancy"() {
-        setup:
-        CompanyC.DB.drop()
-
         when:"A tenant id is present"
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "test1")
 

@@ -3,8 +3,6 @@ package org.grails.datastore.gorm.mongo
 import com.mongodb.client.MongoClient
 import grails.gorm.tests.GormDatastoreSpec
 import grails.gorm.tests.Person
-import org.grails.datastore.mapping.mongo.MongoDatastore
-import org.grails.datastore.mapping.mongo.MongoSession
 
 /**
  * @author Graeme Rocher
@@ -15,11 +13,6 @@ class SwitchDatabaseAtRuntimeSpec extends GormDatastoreSpec {
     List getDomainClasses() {
         [Person]
     }
-
-    void setup() {
-        ((MongoClient) session.nativeInterface).getDatabase('thesimpsons').drop()
-    }
-
 
     void "Test switch database at runtime"() {
         given:"Some test data"
@@ -54,7 +47,6 @@ class SwitchDatabaseAtRuntimeSpec extends GormDatastoreSpec {
             Person.count() == 6
             Person.DB.name == initialDb
     }
-
 
     protected void createPeople() {
         new Person(firstName: "Homer", lastName: "Simpson").save()

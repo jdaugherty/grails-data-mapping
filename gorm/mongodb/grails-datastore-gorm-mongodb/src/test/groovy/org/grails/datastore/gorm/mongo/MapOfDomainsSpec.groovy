@@ -1,7 +1,6 @@
 package org.grails.datastore.gorm.mongo
 
 import grails.gorm.tests.GormDatastoreSpec
-import grails.gorm.tests.Plant
 import grails.persistence.Entity
 import groovy.transform.EqualsAndHashCode
 import org.bson.types.ObjectId

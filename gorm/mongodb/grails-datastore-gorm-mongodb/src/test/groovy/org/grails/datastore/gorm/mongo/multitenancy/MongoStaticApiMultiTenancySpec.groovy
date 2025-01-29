@@ -17,32 +17,27 @@ import spock.lang.Specification
 
 class MongoStaticApiMultiTenancySpec extends Specification {
 
-    @AutoCleanup @Shared MongoDatastore datastore
+    MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
 
-    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
-
-    void cleanupSpec() {
-        mongoDBContainer.stop()
-    }
-
-    void setupSpec() {
+    void setup() {
         mongoDBContainer.start()
-        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl('defaultDb'))
         Map config = [
                 "grails.gorm.multiTenancy.mode"               : "DISCRIMINATOR",
                 "grails.gorm.multiTenancy.tenantResolverClass": SystemPropertyTenantResolver,
-                (MongoSettings.SETTING_URL)                   : "mongodb://localhost/defaultDb",
+                (MongoSettings.SETTING_URL)                   : mongoDBContainer.getReplicaSetUrl('defaultDb'),
         ]
         this.datastore = new MongoDatastore(config, getDomainClasses() as Class[])
-    }
-
-    void setup() {
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
     }
 
+    void cleanup() {
+        datastore.close()
+        mongoDBContainer.stop()
+    }
+
     void "test search"() {
-        setup: "drop existing database"
-        Book.DB.drop()
+        given:
         datastore.buildIndex()
 
         when: "no book exists, now search for a book"
@@ -84,8 +79,7 @@ class MongoStaticApiMultiTenancySpec extends Specification {
     }
 
     void "test searchTop"() {
-        setup: "drop existing database"
-        Book.DB.drop()
+        given:
         datastore.buildIndex()
 
         when: "no book exists, now search for a book"
@@ -133,8 +127,7 @@ class MongoStaticApiMultiTenancySpec extends Specification {
 
 
     void "test find"() {
-        setup: "drop existing database"
-        Book.DB.drop()
+        given:
         datastore.buildIndex()
 
         when: "no book exists, now search for a book"
@@ -176,8 +169,7 @@ class MongoStaticApiMultiTenancySpec extends Specification {
 
 
     void "test count"() {
-        setup: "drop existing database"
-        Book.DB.drop()
+        given:
         datastore.buildIndex()
 
         when: "no book exists, now search for a book"
@@ -218,8 +210,7 @@ class MongoStaticApiMultiTenancySpec extends Specification {
     }
 
     void "test aggregate"() {
-        setup: "drop existing database"
-        Book.DB.drop()
+        given:
         datastore.buildIndex()
 
         when: "no book exists, now search for a book"

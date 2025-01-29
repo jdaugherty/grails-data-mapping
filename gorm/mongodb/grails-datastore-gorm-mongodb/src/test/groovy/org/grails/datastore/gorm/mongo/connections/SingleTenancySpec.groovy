@@ -25,38 +25,31 @@ import static com.mongodb.client.model.Filters.eq
  */
 class SingleTenancySpec extends Specification {
 
-    @Shared @AutoCleanup MongoDatastore datastore
+    MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
 
-    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
-
-    void cleanupSpec() {
-        mongoDBContainer.stop()
-    }
-
-    void setupSpec() {
+    void setup() {
         mongoDBContainer.start()
-        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl("defaultDb"))
-        mongoDBContainer.getReplicaSetUrl("test1Db")
-        mongoDBContainer.getReplicaSetUrl("test2Db")
-
         Map config = [
                 "grails.gorm.multiTenancy.mode":"DATABASE",
                 "grails.gorm.multiTenancy.tenantResolverClass":SystemPropertyTenantResolver,
-                (MongoSettings.SETTING_URL): "mongodb://localhost/defaultDb",
+                (MongoSettings.SETTING_URL): mongoDBContainer.getReplicaSetUrl("defaultDb"),
                 (MongoSettings.SETTING_CONNECTIONS): [
                         test1: [
-                                url: "mongodb://localhost/test1Db"
+                                url: mongoDBContainer.getReplicaSetUrl("test1Db")
                         ],
                         test2: [
-                                url: "mongodb://localhost/test2Db"
+                                url: mongoDBContainer.getReplicaSetUrl("test2Db")
                         ]
                 ]
         ]
         this.datastore = new MongoDatastore(config, getDomainClasses() as Class[])
+        System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
     }
 
-    void setup() {
-        System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
+    void cleanup() {
+        datastore.close()
+        mongoDBContainer.stop()
     }
 
     void "Test no tenant id"() {
@@ -76,11 +69,6 @@ class SingleTenancySpec extends Specification {
     }
 
     void "Test persist and retrieve entities with multi tenancy"() {
-        setup:
-        CompanyB.eachTenant {
-            CompanyB.DB.drop()
-        }
-
         when:"A tenant id is present"
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "test1")
 
@@ -129,11 +117,6 @@ class SingleTenancySpec extends Specification {
     }
 
     void "Test tenant mapped to all"() {
-        setup:
-        CompanyD.eachTenant {
-            CompanyD.DB.drop()
-        }
-
         when:"each tenant is iterated over"
         Map tenantIds = [:]
         CompanyB.eachTenant { String tenantId ->

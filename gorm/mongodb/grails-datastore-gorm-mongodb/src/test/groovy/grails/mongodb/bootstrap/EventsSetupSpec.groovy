@@ -30,8 +30,6 @@ class EventsSetupSpec extends Specification {
     }
 
     void 'test events get triggered'() {
-        setup:
-        MyEventSender.DB.drop()
         when:
         new MyEventSender(name: "fred").save(flush:true)
 

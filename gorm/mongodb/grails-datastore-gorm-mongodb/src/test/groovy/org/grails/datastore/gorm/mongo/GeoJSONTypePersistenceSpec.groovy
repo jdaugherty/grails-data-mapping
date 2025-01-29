@@ -5,7 +5,6 @@ import grails.mongodb.geo.Box
 import grails.mongodb.geo.Circle
 import grails.mongodb.geo.GeometryCollection
 import grails.mongodb.geo.LineString
-import grails.mongodb.geo.Metric
 import grails.mongodb.geo.MultiLineString
 import grails.mongodb.geo.MultiPoint
 import grails.mongodb.geo.MultiPolygon

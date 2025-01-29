@@ -4,8 +4,6 @@ import grails.gorm.services.Service
 import grails.gorm.services.Where
 import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
-import grails.testing.services.ServiceUnitTest
-
 import jakarta.persistence.Embeddable
 
 class EmbeddedWhereClauseSpec extends GormDatastoreSpec {

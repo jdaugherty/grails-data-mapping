@@ -3,9 +3,6 @@ package org.grails.datastore.gorm.mongo
 import grails.gorm.tests.GormDatastoreSpec
 import grails.mongodb.MongoEntity
 import grails.persistence.Entity
-import com.mongodb.DBRef
-import com.mongodb.DBObject
-import org.bson.types.ObjectId
 
 /**
  *

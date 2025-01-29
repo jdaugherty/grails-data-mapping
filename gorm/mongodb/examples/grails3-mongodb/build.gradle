@@ -3,7 +3,7 @@ plugins {
     id 'com.bertramlabs.asset-pipeline'
 }
 
-group = 'examples'
+group = 'mongofunctional.tests'
 
 apply plugin:'org.grails.grails-web'
 apply plugin:'org.grails.grails-gsp'

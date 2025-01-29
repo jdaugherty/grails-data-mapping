@@ -1,12 +1,13 @@
 package grails.gorm.tests
 
-import com.mongodb.Block
+
 import org.bson.Document
 import org.grails.datastore.gorm.mongo.Product
 //tag::nativeImport[]
 import com.mongodb.client.FindIterable
 import static com.mongodb.client.model.Filters.*
 //end::nativeImport[]
+
 /**
  * Created by graemerocher on 24/10/16.
  */
@@ -15,7 +16,6 @@ class FindNativeSpec extends GormDatastoreSpec {
 
     void "test native find method"() {
         setup:
-        Product.DB.drop()
         new Product(title: "cake").save()
         new Product(title: "coffee").save(flush:true)
 

@@ -6,6 +6,8 @@ import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoSettings
 import org.grails.datastore.mapping.multitenancy.exceptions.TenantNotFoundException
 import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -15,19 +17,22 @@ import spock.lang.Specification
  */
 class SchemaBasedMultiTenancySpec extends Specification {
 
-    @Shared @AutoCleanup MongoDatastore datastore
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    MongoDatastore datastore
 
-    void setupSpec() {
+    void setup() {
+        mongoDBContainer.start()
         Map config = [
-                (MongoSettings.SETTING_URL): "mongodb://localhost/defaultDb",
+                (MongoSettings.SETTING_URL): mongoDBContainer.getReplicaSetUrl("defaultDb"),
                 "grails.gorm.multiTenancy.mode"               :"SCHEMA",
                 "grails.gorm.multiTenancy.tenantResolverClass":SystemPropertyTenantResolver
         ]
         this.datastore = new MongoDatastore(config, getDomainClasses() as Class[])
+        System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
     }
 
-    void setup() {
-        System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
+    void cleanup() {
+        mongoDBContainer.stop()
     }
 
     void "Test no tenant id"() {
@@ -47,16 +52,6 @@ class SchemaBasedMultiTenancySpec extends Specification {
     }
 
     void "Test persist and retrieve entities with multi tenancy"() {
-        setup:
-        CompanyB.eachTenant {
-            try {
-                CompanyB.DB.drop()    
-            } catch(e) {
-                // continue
-            }
-            
-        }
-
         when:"A tenant id is present"
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "test1")
 

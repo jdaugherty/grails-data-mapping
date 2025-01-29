@@ -2,10 +2,9 @@ package org.grails.datastore.gorm.mongo
 
 import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
-import spock.lang.Ignore
 import spock.lang.IgnoreIf
 
-class BasicCollectionsSpec extends GormDatastoreSpec{
+class BasicCollectionsSpec extends GormDatastoreSpec {
     @Override
     List getDomainClasses() {
         [Linguist, Increment]

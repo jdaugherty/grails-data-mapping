@@ -1,6 +1,6 @@
 package org.grails.datastore.gorm.mongo
 
-import com.mongodb.MongoException
+
 import com.mongodb.MongoQueryException
 import com.mongodb.ReadConcern
 import com.mongodb.WriteConcern

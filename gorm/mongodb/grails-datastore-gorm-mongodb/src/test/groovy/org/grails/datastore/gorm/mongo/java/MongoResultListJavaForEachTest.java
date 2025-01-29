@@ -19,28 +19,37 @@ import org.grails.datastore.gorm.mongo.Book;
 import org.grails.datastore.mapping.core.Session;
 import org.grails.datastore.mapping.model.PersistentEntity;
 import org.grails.datastore.mapping.mongo.MongoDatastore;
+import org.grails.datastore.mapping.mongo.config.MongoSettings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+
 /**
  * @author Graeme Rocher
  * @since 1.0
  */
 public class MongoResultListJavaForEachTest {
 
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:" + System.getProperty("mongodbContainerVersion", "7.0.16")));
     MongoDatastore datastore;
     PlatformTransactionManager transactionManager;
     TransactionStatus transaction;
+
     @Before
     public void setup() {
+        mongoDBContainer.start();
+        System.setProperty(MongoSettings.SETTING_HOST, mongoDBContainer.getHost());
+        System.setProperty(MongoSettings.SETTING_PORT, mongoDBContainer.getMappedPort(27017).toString());
         datastore = new MongoDatastore(Book.class);
         transactionManager = datastore.getTransactionManager();
         transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
@@ -53,13 +62,12 @@ public class MongoResultListJavaForEachTest {
         if (datastore != null) {
             datastore.close();
         }
+        mongoDBContainer.stop();
     }
 
     // Test for issue https://github.com/grails/gorm-mongodb/issues/45
     @Test
     public void testForEachWithMongoResultList() {
-        PersistentEntity entity = datastore.getMappingContext().getPersistentEntity(Book.class.getName());
-        datastore.getCollection(entity).drop();
         Book b1 = new Book();
         b1.setName("The Stand");
 

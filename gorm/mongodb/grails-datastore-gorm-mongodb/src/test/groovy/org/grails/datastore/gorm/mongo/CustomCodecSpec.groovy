@@ -35,11 +35,11 @@ import static java.time.temporal.ChronoUnit.DAYS
  */
 class CustomCodecSpec extends Specification {
 
-    @AutoCleanup @Shared MongoDatastore datastore
+    MongoDatastore datastore
 
-    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
 
-    void setupSpec() {
+    void setup() {
         mongoDBContainer.start()
         System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME))
         datastore = new MongoDatastore(
@@ -49,13 +49,13 @@ class CustomCodecSpec extends Specification {
                 Person, InstantHolder)
     }
 
-    void cleanupSpec() {
+    void cleanup() {
+        datastore.close()
         mongoDBContainer.stop()
     }
 
     void "Test custom codecs"() {
         when:"A new person is saved"
-        Person.DB.drop()
         def birthday = new Birthday(new Date())
         new Person(name: "Fred", birthday: birthday).save(flush:true)
 
@@ -77,7 +77,6 @@ class CustomCodecSpec extends Specification {
 
         when:"A new instant holder is saved"
         InstantAsBsonDateTimeCodec.resetCounts()
-        InstantHolder.DB.drop()
         def instant = Instant.now()
         def holder = new InstantHolder(anInstant: instant)
 

@@ -6,11 +6,12 @@ import org.bson.Document
 
 class InheritanceQueryingSpec extends GormDatastoreSpec {
 
-    def cleanup() {
-        A.get("id")?.delete(flush:true)
-        B.get("id")?.delete(flush:true)
-        C.get("childId")?.delete(flush: true)
-    }
+    // db will be dropped
+//    def cleanup() {
+//        A.get("id")?.delete(flush:true)
+//        B.get("id")?.delete(flush:true)
+//        C.get("childId")?.delete(flush: true)
+//    }
 
     def setup() {
         B b = new B()

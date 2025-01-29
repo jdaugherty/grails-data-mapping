@@ -5,7 +5,6 @@ import grails.gorm.tests.GormDatastoreSpec
 import grails.persistence.Entity
 import org.bson.types.ObjectId
 import org.grails.datastore.mapping.dirty.checking.DirtyCheckable
-import org.grails.datastore.mapping.mongo.config.MongoSettings
 import spock.lang.Issue
 
 /**

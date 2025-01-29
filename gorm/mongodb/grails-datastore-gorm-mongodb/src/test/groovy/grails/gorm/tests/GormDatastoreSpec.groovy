@@ -25,8 +25,6 @@ import org.springframework.context.support.StaticMessageSource
 import org.springframework.validation.Validator
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.utility.DockerImageName
-import spock.lang.AutoCleanup
-import spock.lang.Shared
 import spock.lang.Specification
 
 /**
@@ -47,39 +45,34 @@ abstract class GormDatastoreSpec extends Specification {
         [:]
     }
 
-    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
-
-    void cleanupSpec() {
-        mongoDBContainer.stop()
-    }
-
-    @Shared @AutoCleanup MongoDatastore mongoDatastore
-    @Shared MongoClient mongoClient
-    @Shared GrailsApplication grailsApplication
-    @Shared MappingContext mappingContext
+    MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    
+    MongoDatastore mongoDatastore
+    MongoClient mongoClient
+    GrailsApplication grailsApplication
+    MappingContext mappingContext
 
     AbstractMongoSession session
 
-    void setupSpec() {
-        mongoDBContainer.start()
+    void setupValidator(Class entityClass, Validator validator = null) {
+        PersistentEntity entity = mappingContext.persistentEntities.find { PersistentEntity e -> e.javaClass == entityClass }
+        def messageSource = new StaticMessageSource()
+        def evaluator = new DefaultConstraintEvaluator(new DefaultConstraintRegistry(messageSource), mappingContext, Collections.emptyMap())
+        if (entity) {
+            mappingContext.addEntityValidator(entity, validator ?:
+            new PersistentEntityValidator(entity, messageSource, evaluator))
+        }
+    }
 
+    void setup() {
+        mongoDBContainer.start()
 
         def allClasses = getDomainClasses() as Class[]
         def ctx = new GenericApplicationContext()
         ctx.refresh()
 
         def databaseName = System.getProperty(GormDatastoreSpec.CURRENT_TEST_NAME) ?: 'test'
-        System.setProperty('grails.mongodb.host', mongoDBContainer.getHost())
-        System.setProperty('grails.mongodb.port', mongoDBContainer.getMappedPort(27017) as String)
-
-        /*
-            String SETTING_HOST = "grails.mongodb.host"
-        String SETTING_PORT = "grails.mongodb.port"
-        String SETTING_USERNAME = "grails.mongodb.username"
-        String SETTING_PASSWORD = "grails.mongodb.password"
-         */
-
-        def config = [(MongoSettings.SETTING_DATABASE_NAME): databaseName]
+        def config = [(MongoSettings.SETTING_DATABASE_NAME): databaseName, (MongoSettings.SETTING_HOST): mongoDBContainer.getHost(), (MongoSettings.SETTING_PORT): mongoDBContainer.getMappedPort(27017) as String]
         mongoDatastore = new MongoDatastore(config << getConfiguration())
         mappingContext = mongoDatastore.mappingContext
         mappingContext.mappingFactory.registerCustomType(new AbstractMappingAwareCustomTypeMarshaller<Birthday, Document, Document>(Birthday) {
@@ -119,19 +112,7 @@ abstract class GormDatastoreSpec extends Specification {
         grailsApplication = new DefaultGrailsApplication(allClasses, getClass().getClassLoader())
         grailsApplication.mainContext = ctx
         grailsApplication.initialise()
-    }
-
-    void setupValidator(Class entityClass, Validator validator = null) {
-        PersistentEntity entity = mappingContext.persistentEntities.find { PersistentEntity e -> e.javaClass == entityClass }
-        def messageSource = new StaticMessageSource()
-        def evaluator = new DefaultConstraintEvaluator(new DefaultConstraintRegistry(messageSource), mappingContext, Collections.emptyMap())
-        if (entity) {
-            mappingContext.addEntityValidator(entity, validator ?:
-            new PersistentEntityValidator(entity, messageSource, evaluator))
-        }
-    }
-
-    void setup() {
+        
         session = mongoDatastore.connect()
         DatastoreUtils.bindSession session
     }
@@ -139,11 +120,13 @@ abstract class GormDatastoreSpec extends Specification {
     void cleanup() {
         session.disconnect()
         DatastoreUtils.unbindSession(session)
-        mongoDatastore.getMongoClient().getDatabase(mongoDatastore.defaultDatabase).drop()
-        mongoDatastore.buildIndex()
+        //mongoDatastore.getMongoClient().getDatabase(mongoDatastore.defaultDatabase).drop()
+        //mongoDatastore.buildIndex()
         for(cls in getDomainClasses()) {
             GormEnhancer.findValidationApi(cls).setValidator(null)
         }
+        mongoDatastore.close()
+        mongoDBContainer.stop()
     }
 
 }

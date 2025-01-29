@@ -23,7 +23,6 @@ class MongoEntityConfigSpec extends GormDatastoreSpec{
             def client = (MongoClient)session.nativeInterface
             MongoDatabase db = client.getDatabase(session.defaultDatabase)
 
-            db.drop()
             // db.resetIndexCache() // this method is missing from more recent driver versions
 
         when:

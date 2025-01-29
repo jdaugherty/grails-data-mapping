@@ -19,10 +19,6 @@ class IndexWithInheritanceSpec extends GormDatastoreSpec {
         Mammal.DB.listCollectionNames().toList().contains('mammal')
         !Mammal.DB.listCollectionNames().toList().contains('lion')
     }
-
-    def cleanup() {
-        Mammal.DB.drop()
-    }
 }
 @Entity
 class Mammal implements MongoEntity<Mammal> {
