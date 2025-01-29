@@ -13,7 +13,7 @@ dependencies {
 
     implementation project(":gorm-mongodb-grails-plugin")
     implementation "org.mongodb:mongodb-driver-sync"
-    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    testImplementation "org.testcontainers:mongodb"
     implementation "org.grails.plugins:hibernate5"
 
     implementation "org.grails:grails-core"
@@ -41,7 +41,7 @@ dependencies {
     integrationTestImplementation testFixtures("org.grails.plugins:geb")
 
     // For the example app, run an in memory db
-    implementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    implementation "org.testcontainers:mongodb"
 
     testImplementation "io.micrometer:micrometer-core:latest.integration"
     testImplementation "org.apache.groovy:groovy-test-junit5"

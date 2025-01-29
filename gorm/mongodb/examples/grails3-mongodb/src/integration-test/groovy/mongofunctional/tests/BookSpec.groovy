@@ -5,12 +5,14 @@ import grails.testing.mixin.integration.Integration
 
 import grails.validation.ValidationException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 
 /**
  * Created by graemerocher on 12/09/2016.
  */
-@Integration(applicationClass = Application)
+@Integration
+@SpringBootTest(useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 class BookSpec extends Specification {
 
     @Autowired

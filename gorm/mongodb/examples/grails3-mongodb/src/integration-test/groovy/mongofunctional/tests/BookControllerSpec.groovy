@@ -3,7 +3,7 @@ package mongofunctional.tests
 import grails.plugin.geb.ContainerGebSpec
 import grails.testing.mixin.integration.Integration
 
-@Integration(applicationClass = Application)
+@Integration
 class BookControllerSpec extends ContainerGebSpec {
 
     void "Test list books"() {

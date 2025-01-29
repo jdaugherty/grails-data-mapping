@@ -44,7 +44,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testImplementation "org.junit.platform:junit-platform-runner"
     testImplementation "org.spockframework:spock-core", { transitive = false }
-    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    testImplementation "org.testcontainers:mongodb"
     testRuntimeOnly 'org.springframework:spring-aop'
 }
 

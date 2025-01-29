@@ -28,7 +28,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testImplementation "org.junit.platform:junit-platform-runner"
     testImplementation "org.spockframework:spock-core"
-    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    testImplementation "org.testcontainers:mongodb"
 }
 
 apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')

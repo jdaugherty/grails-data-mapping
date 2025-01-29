@@ -15,7 +15,7 @@ dependencies {
     implementation project(":gorm-mongodb-boot-plugin")
     
     // For the example app, run an in memory db
-    implementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    implementation "org.testcontainers:mongodb"
 
     testImplementation "io.micrometer:micrometer-core:latest.integration"
     testImplementation "org.apache.groovy:groovy-test-junit5"

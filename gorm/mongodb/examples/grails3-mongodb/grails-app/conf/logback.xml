@@ -11,6 +11,8 @@
         </encoder>
     </appender>
 
+    <logger name="org.mongodb.driver" level="DEBUG"/>
+
     <root level="error">
         <appender-ref ref="STDOUT" />
     </root>

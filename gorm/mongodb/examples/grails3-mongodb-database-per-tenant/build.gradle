@@ -40,7 +40,7 @@ dependencies {
     integrationTestImplementation testFixtures("org.grails.plugins:geb")
 
     // For the example app, run an in memory db
-    implementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    implementation "org.testcontainers:mongodb"
 
     testImplementation "io.micrometer:micrometer-core:latest.integration"
     testImplementation "org.apache.groovy:groovy-test-junit5"
