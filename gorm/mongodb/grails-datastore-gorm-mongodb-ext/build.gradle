@@ -1,5 +1,39 @@
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+version = projectVersion
+group = 'org.grails'
+
+ext {
+    pomArtifactId = 'grails-datastore-gorm-mongodb-ext'
+    pomTitle = 'GORM for MongoDB'
+    pomDescription = 'Provides a GORM Object Mapping implementations for the MongoDB Document Database'
+    pomDevelopers = ['graemerocher': 'Graeme Rocher', 'jeffscottbrown': 'Jeff Brown', 'burtbeckwith': 'Burth Beckwith']
+    mavenPublishUrl = 'https://repo.grails.org/grails/libs-snapshots-local'
+}
+
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
-    api "org.mongodb:mongodb-driver-sync"
-    api project(":grails-datastore-gorm-mongodb")
+    api 'org.mongodb:mongodb-driver-sync'
+    api project(':gorm-mongodb-grails-datastore-gorm-mongodb')
+    api "org.apache.groovy:groovy"
+    api "org.apache.groovy:groovy-templates"
+
+    testImplementation "org.apache.groovy:groovy-json"
+    testImplementation "org.apache.groovy:groovy-templates"
+    testImplementation "org.apache.groovy:groovy-test-junit5"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.platform:junit-platform-runner"
+    testImplementation "org.spockframework:spock-core", { transitive = false }
+    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+
+    compileOnly 'org.slf4j:slf4j-api', {
+        // provided: Logger, LoggerFactory
+    }
 }
+
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/publish-config.gradle')

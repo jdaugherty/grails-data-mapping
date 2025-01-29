@@ -16,7 +16,7 @@ tasks.register('cleanDocs', Delete) {
 // grails-data-mapping api
 tasks.register('data-mapping-groovydoc', Groovydoc) {
     group = 'documentation'
-    description = 'Copies Groovy API Documentation for all supporting projects'
+    description = 'Copies Groovy API Documentation for all supporting grails-data-mapping projects'
     Set<Project> docProjects = rootProject.subprojects.findAll {
         it.name in [
                 'grails-datastore-async',
@@ -56,9 +56,50 @@ tasks.register('data-mapping-groovydoc', Groovydoc) {
     }
 }
 
+// gorm api
+tasks.register('gorm-groovydoc', Groovydoc) {
+    group = 'documentation'
+    description = 'Copies Groovy API Documentation for all supporting gorm implementation projects'
+    Set<Project> docProjects = rootProject.subprojects.findAll {
+        it.name in [
+            'gorm-mongodb-boot-plugin',
+            'gorm-mongodb-grails-datastore-gorm-bson',
+            'gorm-mongodb-grails-datastore-gorm-mongodb',
+            'gorm-mongodb-grails-datastore-gorm-mongodb-ext',
+            'gorm-mongodb-grails-plugin'
+            // gorm-mongodb-json-templates does not have any groovydoc
+        ]
+    }
+
+    for (Project docProject : docProjects) {
+        docProject.sourceSets.main.allSource.srcDirs.each { File srcDir -> if(srcDir.exists()) inputs.dir(srcDir) }
+    }
+
+    docTitle = "GORM for ${project.name.substring('gorm-'.length())} - ${projectVersion}"
+    source = docProjects.collect { it.sourceSets.main.allSource }.flatten()
+    classpath = files(configurations.documentation + docProjects.configurations.compileClasspath)
+
+    access = GroovydocAccess.PROTECTED
+    includeAuthor = true
+    includeMainForScripts = false
+    processScripts = false
+
+    String targetApiDir = "docs/${project.name.substring('gorm-'.length())}/api"
+    destinationDir = project.layout.buildDirectory.dir(targetApiDir).get().asFile
+
+    //TODO: we should add `links` so the gorm API is linked in the mongo docs
+
+    dependsOn([':cleanDocs'] + docProjects.collect { "$it.name:classes" })
+
+    outputs.dir(project.layout.buildDirectory.dir(targetApiDir).get().asFile)
+    doLast {
+        delete(rootProject.layout.buildDirectory.dir('tmp'))
+    }
+}
+
 tasks.register('docs') {
     group = 'documentation'
-    dependsOn(':data-mapping-groovydoc')
+    dependsOn(':data-mapping-groovydoc', ':gorm-groovydoc')
     finalizedBy('copyRootWebsite','copyGuides')
 }
 
@@ -71,6 +112,7 @@ tasks.register('copyRootWebsite', Copy) {
 tasks.register('copyGuides', Copy) {
     group = 'documentation'
 
+    // guides
     for (Project subproject : subprojects.findAll { it.name.startsWith('docs-guide-') }) {
         dependsOn(subproject.tasks.named('asciidoctor'))
         def guideDirectory = subproject.layout.buildDirectory.dir('docs')
@@ -79,5 +121,16 @@ tasks.register('copyGuides', Copy) {
             into ("${subproject.name.substring('docs-guide-'.length())}/manual")
         }
     }
+
+    // gorm implementations
+    for (Project subproject : subprojects.findAll { it.name.startsWith('docs-gorm-') }) {
+        dependsOn(subproject.tasks.named('asciidoctor'))
+        def guideDirectory = subproject.layout.buildDirectory.dir('docs')
+        from(guideDirectory) {
+            includeEmptyDirs = false
+            into (subproject.name.substring('docs-gorm-'.length()))
+        }
+    }
+
     into rootProject.layout.buildDirectory.dir('docs')
 }

@@ -11,6 +11,8 @@ import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoSettings
 import org.grails.datastore.mapping.multitenancy.exceptions.TenantNotFoundException
 import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -25,7 +27,18 @@ class SingleTenancySpec extends Specification {
 
     @Shared @AutoCleanup MongoDatastore datastore
 
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
+
     void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl("defaultDb"))
+        mongoDBContainer.getReplicaSetUrl("test1Db")
+        mongoDBContainer.getReplicaSetUrl("test2Db")
+
         Map config = [
                 "grails.gorm.multiTenancy.mode":"DATABASE",
                 "grails.gorm.multiTenancy.tenantResolverClass":SystemPropertyTenantResolver,

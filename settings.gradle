@@ -27,6 +27,7 @@ buildCache {
 
 rootProject.name = 'grails-data-mapping'
 
+// grails-data-mapping
 include(
     'grails-datastore-core',
     'grails-datastore-web',
@@ -51,7 +52,7 @@ include(
     'test-report'
 )
 
-// Documentation
+// grails-data-mapping documentation
 include 'docs-guide-developer'
 project(':docs-guide-developer').projectDir = file('docs/guide-developer')
 
@@ -61,3 +62,43 @@ project(':docs-guide-developer').projectDir = file('docs/guide-developer')
 
 include 'docs-guide-whats-new'
 project(':docs-guide-whats-new').projectDir = file('docs/guide-whats-new')
+
+// mongo documentation
+include 'docs-gorm-mongodb'
+project(':docs-gorm-mongodb').projectDir = file('docs/gorm-mongodb')
+
+// mongo gorm 
+include 'gorm-mongodb-grails-datastore-gorm-bson'
+project(':gorm-mongodb-grails-datastore-gorm-bson').projectDir = file('gorm/mongodb/grails-datastore-gorm-bson')
+include 'gorm-mongodb-grails-datastore-gorm-mongodb'
+project(':gorm-mongodb-grails-datastore-gorm-mongodb').projectDir = file('gorm/mongodb/grails-datastore-gorm-mongodb')
+include 'gorm-mongodb-grails-datastore-gorm-mongodb-ext'
+project(':gorm-mongodb-grails-datastore-gorm-mongodb-ext').projectDir = file('gorm/mongodb/grails-datastore-gorm-mongodb-ext')
+
+include 'gorm-mongodb-boot-plugin'
+project(':gorm-mongodb-boot-plugin').projectDir = file('gorm/mongodb/boot-plugin')
+
+include 'gorm-mongodb-grails-plugin'
+project(':gorm-mongodb-grails-plugin').projectDir = file('gorm/mongodb/grails-plugin')
+
+include 'gorm-mongodb-json-templates'
+project(':gorm-mongodb-json-templates').projectDir = file('gorm/mongodb/json-templates')
+
+// mongo gorm examples
+include 'gorm-mongodb-examples-grails3-mongodb'
+project(':gorm-mongodb-examples-grails3-mongodb').projectDir = new File(settingsDir, 'gorm/mongodb/examples/grails3-mongodb')
+
+include 'gorm-mongodb-examples-grails3-mongodb-database-per-tenant'
+project(':gorm-mongodb-examples-grails3-mongodb-database-per-tenant').projectDir = new File(settingsDir, 'gorm/mongodb/examples/grails3-mongodb-database-per-tenant')
+
+include 'gorm-mongodb-examples-grails3-hibernate5-mongodb'
+project(':gorm-mongodb-examples-grails3-hibernate5-mongodb').projectDir = new File(settingsDir, 'gorm/mongodb/examples/grails3-hibernate5-mongodb')
+
+include 'gorm-mongodb-examples-springboot-mongodb'
+project(':gorm-mongodb-examples-springboot-mongodb').projectDir = new File(settingsDir, 'gorm/mongodb/examples/springboot-mongodb')
+
+include 'gorm-mongodb-examples-test-data-service'
+project(':gorm-mongodb-examples-test-data-service').projectDir = new File(settingsDir, 'gorm/mongodb/examples/test-data-service')
+
+include 'gorm-mongodb-examples-gson-templates'
+project(':gorm-mongodb-examples-gson-templates').projectDir = new File(settingsDir, 'gorm/mongodb/examples/gson-templates')

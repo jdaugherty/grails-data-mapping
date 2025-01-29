@@ -6,8 +6,11 @@ plugins {
 version = projectVersion
 group = 'org.grails'
 
-dependencies {
+ext {
+    mavenPublishUrl = "https://repo.grails.org/grails/libs-snapshots-local"
+}
 
+dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
 
     api project(':grails-datastore-core'), {

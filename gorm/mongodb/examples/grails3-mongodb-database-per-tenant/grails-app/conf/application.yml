@@ -22,7 +22,8 @@ grails:
       mode: DATABASE
       tenantResolverClass: org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
   mongodb:
-    url: mongodb://localhost/mydb
+    # urls will be set by Application.groovy for the test container
+    #url: mongodb://localhost/mydb
     connections:
       test1:
         url: mongodb://localhost/test1Db

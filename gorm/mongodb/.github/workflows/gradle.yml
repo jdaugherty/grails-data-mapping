@@ -61,31 +61,3 @@ jobs:
         ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
       with:
         arguments: -Dorg.gradle.internal.publish.checksums.insecure=true publish
-    - name: Build Docs
-      id: docs
-      if: steps.build.outcome == 'success'
-      uses: gradle/gradle-build-action@v3
-      env:
-        GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
-      with:
-        arguments: docs:docs
-    - name: Determine docs target repository
-      if: steps.docs.outcome == 'success'
-      uses: haya14busa/action-cond@v1
-      id: docs_target
-      with:
-        cond: ${{ github.repository == 'grails/gorm-mongodb' }}
-        if_true: "grails/grails-data-mapping"
-        if_false: ${{ github.repository }}
-    - name: Publish to Github Pages
-      if: steps.docs.outcome == 'success'
-      uses: grails/github-pages-deploy-action@main
-      env:
-        TARGET_REPOSITORY: ${{ steps.docs_target.outputs.value }}
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: docs/build/docs
-        DOC_SUB_FOLDER: mongodb
-        DOC_FOLDER: gh-pages
-        COMMIT_EMAIL: 'grails-build@users.noreply.github.com'
-        COMMIT_NAME: 'grails-build'

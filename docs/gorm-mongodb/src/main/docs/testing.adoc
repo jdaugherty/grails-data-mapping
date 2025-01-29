@@ -1,0 +1,118 @@
+== Unit Testing
+To write unit tests with MongoDB and Spock you can simply extend from `grails.test.mongodb.MongoSpec`.
+
+`MongoSpec` is an abstract class that will initialise GORM in the setup phase of the specification being executed. It
+uses by default a `MongoClient` instance that connects to a MongoDB instance as defined in your configuration
+(by default, `localhost` and port `27017`, see <<gettingStarted>> for more details):
+
+It is preferable to use testcontainers to automatically run MongoDB in a containerized environment and not have to run a MongoDB instance locally. The following examples use testcontainers:
+
+[source,groovy]
+----
+package functional.tests
+
+import com.mongodb.client.MongoClient
+import com.mongodb.client.MongoClients
+import groovy.transform.CompileStatic
+import org.testcontainers.containers.MongoDBContainer
+
+@CompileStatic
+trait EmbeddedMongoClient {
+
+    abstract MongoDBContainer getMongoDBContainer()
+
+    MongoClient createMongoClient() {
+        if (!mongoDBContainer.isRunning()) {
+            mongoDBContainer.start()
+        }
+        return MongoClients.create(mongoDBContainer.getReplicaSetUrl())
+    }
+}
+----
+
+[source,groovy]
+----
+import grails.test.mongodb.MongoSpec
+import grails.validation.ValidationException
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
+import spock.lang.Ignore
+import spock.lang.Shared
+
+class LocalMongoUnitSpec extends MongoSpec implements EmbeddedMongoClient {
+
+    @Shared
+    final MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:latest"))
+
+    void "test fail on error"() {
+
+        when:
+        def invalid = new Book(title: "")
+        invalid.save()
+
+        then:
+        thrown ValidationException
+        invalid.hasErrors()
+    }
+}
+----
+
+You can also use your own low-level `MongoClient` instance, as shown in the following example:
+
+[source,groovy]
+----
+package functional.tests
+
+import grails.test.mongodb.MongoSpec
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
+import spock.lang.Shared
+
+class BookUnitSpec extends MongoSpec implements EmbeddedMongoClient {
+
+    @Shared
+    final MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:latest"))
+
+    void "Test low-level API extensions"() {
+        when:
+        def db = createMongoClient().getDatabase("test")
+//        db.drop()
+        // Insert a document
+        db['languages'].insert([name: 'Groovy'])
+        // A less verbose way to do it
+        db.languages.insert(name: 'Ruby')
+        // Yet another way
+        db.languages << [name: 'Python']
+
+        then:
+        db.languages.count() == 3
+    }
+
+    void "Test GORM access"(){
+        when:
+        Book book = new Book(title: 'El Quijote').save(flush: true)
+
+        then:
+        Book.count() ==1
+
+        when:
+        book = Book.findByTitle('El Quijote')
+
+        then:
+        book.id
+    }
+
+}
+----
+
+Note that the default implementation is to scan your classpath searching for domain classes, from the package defined
+in the configuration property `grails.codegen.defaultPackage`, and all the way down its subpackages. If your application
+is large, classpath scanning may be slow, so it's better to override the method `getDomainClasses()`:
+
+[source,groovy]
+----
+@Override
+protected List<Class> getDomainClasses() {
+    [Book]
+}
+----

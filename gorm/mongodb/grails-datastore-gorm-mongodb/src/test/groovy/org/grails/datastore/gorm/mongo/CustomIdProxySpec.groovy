@@ -8,7 +8,7 @@ import spock.lang.Issue
 /**
  * Created by graemerocher on 14/10/16.
  */
-class CustomIdProxySpec extends GormDatastoreSpec{
+class CustomIdProxySpec extends GormDatastoreSpec {
 
     @Issue('https://github.com/grails/grails-data-mapping/issues/813')
     void "Test custom id with proxies"() {

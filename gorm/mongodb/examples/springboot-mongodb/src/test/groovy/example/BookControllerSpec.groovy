@@ -3,6 +3,8 @@ package example
 import grails.gorm.transactions.Rollback
 import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -17,10 +19,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 class BookControllerSpec extends Specification {
 
-    @Shared @AutoCleanup MongoDatastore datastore = new MongoDatastore(getClass().getPackage())
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    @Shared @AutoCleanup MongoDatastore datastore
 
     BookController bookController = new BookController(bookService: datastore.getService(BookService))
 
+    void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl('myDb'))
+        datastore = new MongoDatastore(getClass().getPackage())
+    }
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
 
     @Rollback
     void "test find by title"() {

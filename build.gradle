@@ -5,6 +5,7 @@ ext {
 
 String customGroovyVersion = findProperty('groovyVersion') ?: System.getenv('GROOVY_VERSION')
 if (customGroovyVersion) {
+    ext['groovy.version'] = "$customGroovyVersion" // force the bom to be overridden too
     logger.lifecycle("Using custom Groovy version: $customGroovyVersion")
 }
 

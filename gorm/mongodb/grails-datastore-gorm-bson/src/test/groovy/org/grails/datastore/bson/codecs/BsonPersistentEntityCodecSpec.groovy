@@ -38,7 +38,7 @@ class BsonPersistentEntityCodecSpec extends Specification {
         format.setTimeZone(UTC)
 
         def date = format.parse('1973/07/09')
-        codec.encode(new JsonWriter(sw,new JsonWriterSettings(JsonMode.STRICT)), new Person(name: "Fred", age: 12, dateOfBirth: date))
+        codec.encode(new JsonWriter(sw, JsonWriterSettings.builder().outputMode(JsonMode.STRICT).build()), new Person(name: "Fred", age: 12, dateOfBirth: date))
 
         def json = new JsonSlurper().parseText(sw.toString())
         then:"The result is encoded JSON"

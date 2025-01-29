@@ -19,7 +19,8 @@ grails:
   gorm:
     failOnError: true
   mongodb:
-    url: mongodb://localhost/mydb
+    # url will be set to running container
+    #url: mongodb://localhost/mydb
     options:
       maxWaitTime: 10000
 ---

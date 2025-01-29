@@ -1,0 +1,54 @@
+import org.asciidoctor.gradle.jvm.AsciidoctorTask
+
+plugins {
+    id 'org.asciidoctor.jvm.convert' version "${asciidoctorGradleVersion}"
+}
+
+version project.projectVersion
+group 'org.grails'
+
+apply plugin: 'groovy'
+
+dependencies {
+    implementation platform("org.grails:grails-bom:$grailsVersion")
+    implementation 'org.mongodb:mongodb-driver-sync'
+}
+
+tasks.register('resolveMongodbVersion') {
+    group = 'documentation'
+    description = 'Resolve MongoDB Version from the BOM'
+    ext.resolved = configurations.compileClasspath
+            .resolvedConfiguration
+            .resolvedArtifacts
+            .find {
+                it.moduleVersion.id.group == 'org.mongodb' &&
+                        it.moduleVersion.id.name.contains('mongodb-driver-sync')
+            }.moduleVersion.id.version
+    logger.lifecycle('Resolved MongoDB Driver Version for Guide links: {}', resolved)
+}
+
+tasks.named('asciidoctor', AsciidoctorTask) { AsciidoctorTask it ->
+    dependsOn('resolveMongodbVersion')
+
+    inputs.dir project.layout.projectDirectory.dir('src/main/docs')
+    outputs.dir project.layout.buildDirectory.dir('docs')
+
+    it.jvm {
+        jvmArgs("--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED")
+    }
+    it.baseDirFollowsSourceFile()
+    it.sourceDir project.layout.projectDirectory.dir('src/main/docs')
+    it.outputDir = project.layout.buildDirectory.dir('docs')
+    it.attributes = [
+            'experimental'  : 'true',
+            'compat-mode'   : 'true',
+            'toc'           : 'left',
+            'icons'         : 'font',
+            'reproducible'  : '',
+            'version'       : project.version,
+            'pluginVersion' : project.version,
+            'mongoDriverVersion': resolveMongodbVersion.resolved,
+            'sourcedir'     : rootProject.layout.projectDirectory.dir('gorm/mongodb').asFile,
+    ]
+}
+

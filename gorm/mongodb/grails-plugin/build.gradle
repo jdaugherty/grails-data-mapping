@@ -1,13 +1,31 @@
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+version = projectVersion
+group = 'org.grails.plugins'
+
+ext {
+    pomArtifactId = 'mongodb'
+    pomTitle = 'GORM for MongoDB'
+    pomDescription = 'Provides a GORM Object Mapping implementations for the MongoDB Document Database'
+    pomDevelopers = ['graemerocher': 'Graeme Rocher', 'jeffscottbrown': 'Jeff Brown', 'burtbeckwith': 'Burth Beckwith']
+    mavenPublishUrl = 'https://repo.grails.org/grails/plugins3-snapshots-local'
+}
+
+apply plugin: 'org.grails.grails-plugin'
+
 dependencies {
-    compileOnly "org.grails:grails-core"
-    compileOnly "org.grails:grails-bootstrap"
-    compileOnly "org.spockframework:spock-core", {
-        exclude group: "junit", module: "junit-dep"
+    compileOnly 'org.grails:grails-core'
+    compileOnly 'org.grails:grails-bootstrap'
+    compileOnly 'org.spockframework:spock-core', {
+        exclude group: 'junit', module: 'junit-dep'
         exclude group: 'org.hamcrest', module: 'hamcrest-core'
     }
 
-    api "org.grails:grails-datastore-web"
-    api "org.grails:grails-datastore-gorm-support", {
+    api project(':grails-datastore-web')
+    api project(':grails-datastore-gorm-support'), {
         exclude group:'org.springframework', module:'spring-context'
         exclude group:'org.springframework', module:'spring-core'
         exclude group:'org.springframework', module:'spring-beans'
@@ -16,11 +34,11 @@ dependencies {
         exclude group:'org.grails', module:'grails-core'
         exclude group:'jakarta.transaction', module:'jta'
     }
-    api project(":grails-datastore-gorm-mongodb-ext"), {
+    api project(':gorm-mongodb-grails-datastore-gorm-mongodb-ext'), {
         exclude group:'org.grails', module:'grails-datastore-gorm-mongodb'
         exclude group:'org.grails', module:'grails-bom'
     }
-    api project(":grails-datastore-gorm-mongodb"), {
+    api project(':gorm-mongodb-grails-datastore-gorm-mongodb'), {
         exclude group:'org.springframework', module:'spring-context'
         exclude group:'org.springframework', module:'spring-core'
         exclude group:'org.springframework', module:'spring-beans'
@@ -29,8 +47,20 @@ dependencies {
         exclude group:'org.grails', module:'grails-core'
         exclude group:'jakarta.transaction', module:'jta'
     }
+
+    testImplementation "org.apache.groovy:groovy-json"
+    testImplementation "org.apache.groovy:groovy-templates"
+    testImplementation "org.apache.groovy:groovy-test-junit5"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.platform:junit-platform-runner"
+    testImplementation "org.spockframework:spock-core", { transitive = false }
+    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
 }
 
 springBoot {
-    mainClass  = "grails.plugins.mongodb.Application"
+    mainClass  = 'grails.plugins.mongodb.Application'
 }
+
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/publish-config.gradle')

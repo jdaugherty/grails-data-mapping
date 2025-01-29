@@ -1,20 +1,47 @@
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+version = projectVersion
+group = 'org.grails'
+
+ext {
+    pomArtifactId = 'gorm-mongodb-spring-boot'
+    pomTitle = 'GORM for MongoDB'
+    pomDescription = 'Provides a GORM Object Mapping implementations for the MongoDB Document Database'
+    pomDevelopers = ['graemerocher': 'Graeme Rocher', 'jeffscottbrown': 'Jeff Brown', 'burtbeckwith': 'Burth Beckwith']
+}
+
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
 
-    compileOnly "org.grails:grails-shell", {
+    compileOnly 'org.grails:grails-shell', {
         exclude group:'org.apache.groovy', module:'groovy'
     }
 
-    api "org.springframework.boot:spring-boot-autoconfigure"
-    api "org.apache.groovy:groovy"
-    api project(":grails-datastore-gorm-mongodb"), {
+    api 'org.springframework.boot:spring-boot-autoconfigure'
+    api 'org.apache.groovy:groovy'
+    api project(':gorm-mongodb-grails-datastore-gorm-mongodb'), {
         exclude group:'org.grails', module:'grails-datastore-gorm-plugin-support'
     }
-    api project(":grails-datastore-gorm-mongodb-ext"), {
+    api project(':gorm-mongodb-grails-datastore-gorm-mongodb-ext'), {
         exclude group:'org.grails', module:'grails-datastore-gorm-mongodb'
     }
-    api "org.springframework:spring-tx"
-    testImplementation "org.grails:grails-shell", {
+    api 'org.springframework:spring-tx'
+    testImplementation 'org.grails:grails-shell', {
         exclude group:'org.apache.groovy', module:'groovy'
     }
+
+    testImplementation "org.apache.groovy:groovy-json"
+    testImplementation "org.apache.groovy:groovy-templates"
+    testImplementation "org.apache.groovy:groovy-test-junit5"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.platform:junit-platform-runner"
+    testImplementation "org.spockframework:spock-core", { transitive = false }
+    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
 }
+
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/publish-config.gradle')

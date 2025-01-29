@@ -10,6 +10,7 @@ ext {
     pomTitle = 'Grails Web Testing Support'
     pomDescription = 'Support for writing concise expressive tests for Grails Web Artifacts'
     pomDevelopers = ['jeffscottbrown': 'Jeff Brown', 'jameskleeh': 'James Kleeh']
+    mavenPublishUrl = "https://repo.grails.org/grails/libs-snapshots-local"
 }
 
 dependencies {

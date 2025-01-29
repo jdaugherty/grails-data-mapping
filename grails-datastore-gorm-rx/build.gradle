@@ -6,6 +6,10 @@ plugins {
 version = projectVersion
 group = 'org.grails'
 
+ext {
+    mavenPublishUrl = "https://repo.grails.org/grails/libs-snapshots-local"
+}
+
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
     implementation 'org.apache.groovy:groovy'
@@ -23,7 +27,6 @@ dependencies {
 
     testImplementation "org.apache.groovy:groovy-test-junit5"
     testImplementation "org.apache.groovy:groovy-test"
-    testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.platform:junit-platform-runner"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api"

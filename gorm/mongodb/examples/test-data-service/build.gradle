@@ -1,52 +1,65 @@
-buildscript {
-    repositories {
-        maven { url "https://repo.grails.org/grails/core" }
-        maven { url "https://plugins.gradle.org/m2/" }
-    }
-    dependencies {
-        classpath "org.grails:grails-gradle-plugin:$grailsGradlePluginVersion"
-        classpath "org.grails.plugins:views-gradle:$grailsViewsVersion"
-    }
-}
+group = 'examples'
 
-apply plugin: "java"
+apply plugin: 'java'
+apply plugin: 'org.grails.grails-web'
+apply plugin: 'org.grails.grails-gsp'
+apply plugin:'org.grails.plugins.views-json'
 
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
 
-    implementation "org.grails:grails-plugin-codecs"
-    implementation "org.grails:grails-plugin-datasource"
-    implementation "org.grails.plugins:cache"
-    implementation "org.grails.plugins:events"
-    implementation project(":grails-plugin")
-    implementation "org.mongodb:mongodb-driver-sync"
-    implementation "org.grails.plugins:spring-security-core:$grailsSpringSecurityCoreVersion"
-    implementation "org.grails.plugins:spring-security-rest:$grailsSpringSecurityRestVersion"
+    implementation 'org.grails:grails-plugin-codecs'
+    implementation 'org.grails:grails-plugin-datasource'
+    implementation 'org.grails.plugins:cache'
+    implementation 'org.grails.plugins:events'
+    implementation project(':gorm-mongodb-grails-plugin')
+    implementation 'org.mongodb:mongodb-driver-sync'
+    implementation 'org.grails.plugins:spring-security-core:7.0.0-SNAPSHOT'
+    implementation 'org.grails.plugins:spring-security-rest:6.0.0-SNAPSHOT'
 
-    profile "org.grails.profiles:rest-api"
-    implementation "org.grails:grails-core"
-    implementation "org.grails:grails-logging"
-    implementation "org.grails:grails-plugin-databinding"
-    implementation "org.grails:grails-plugin-i18n"
-    implementation "org.grails:grails-plugin-interceptors"
-    implementation "org.grails:grails-plugin-rest"
-    implementation "org.grails:grails-plugin-services"
-    implementation "org.grails:grails-plugin-url-mappings"
-    implementation "org.grails:grails-web-boot"
-    implementation "org.grails.plugins:views-json"
-    implementation "org.grails.plugins:views-json-templates"
-    implementation "org.springframework.boot:spring-boot-autoconfigure"
-    implementation "org.springframework.boot:spring-boot-starter"
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "org.springframework.boot:spring-boot-starter-logging"
-    implementation "org.springframework.boot:spring-boot-starter-tomcat"
-    implementation "org.springframework.boot:spring-boot-starter-validation"
-    console "org.grails:grails-console"
-    runtimeOnly "com.h2database:h2"
-    runtimeOnly "org.apache.tomcat:tomcat-jdbc"
-    testImplementation "org.grails:grails-gorm-testing-support"
-    testImplementation "org.grails:views-json-testing-support"
-    testImplementation "org.spockframework:spock-core"
+    profile 'org.grails.profiles:rest-api'
+    implementation 'org.grails:grails-core'
+    implementation 'org.grails:grails-logging'
+    implementation 'org.grails:grails-plugin-databinding'
+    implementation 'org.grails:grails-plugin-i18n'
+    implementation 'org.grails:grails-plugin-interceptors'
+    implementation 'org.grails:grails-plugin-rest'
+    implementation 'org.grails:grails-plugin-services'
+    implementation 'org.grails:grails-plugin-url-mappings'
+    implementation 'org.grails:grails-web-boot'
+    implementation 'org.grails.plugins:views-json'
+    implementation 'org.grails.plugins:views-json-templates'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    console 'org.grails:grails-console'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.apache.tomcat:tomcat-jdbc'
 
+    // For the example app, run an in memory db
+    implementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
 
+    testImplementation 'io.micrometer:micrometer-core:latest.integration'
+    testImplementation 'org.apache.groovy:groovy-test-junit5'
+    testImplementation 'org.grails:views-json-testing-support'
+    testImplementation 'org.hibernate.validator:hibernate-validator'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.platform:junit-platform-runner'
+    testImplementation 'org.spockframework:spock-core'
+    testImplementation 'org.spockframework:spock-core', { transitive = false }
+    testImplementation project(':grails-gorm-testing-support')
 }
+
+bootRun {
+    System.setProperty('mongodbContainerVersion', mongodbContainerVersion)
+}
+
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')

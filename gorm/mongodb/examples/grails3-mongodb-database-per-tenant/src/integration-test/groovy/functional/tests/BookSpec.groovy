@@ -1,6 +1,5 @@
 package functional.tests
 
-import com.mongodb.Block
 import grails.gorm.multitenancy.Tenants
 import grails.testing.mixin.integration.Integration
 

@@ -9,20 +9,34 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
+import spock.lang.Shared
 import spock.lang.Specification
 
 /**
  * Created by graemerocher on 20/03/14.
  */
-class MongoDbGormAutoConfigureWithGeoSpacialSpec extends Specification{
+class MongoDbGormAutoConfigureWithGeoSpacialSpec extends Specification {
 
-    protected AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+    protected AnnotationConfigApplicationContext context
+
+    void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('spring.data.mongodb.uri', mongoDBContainer.getReplicaSetUrl('myDb'))
+    }
 
     void cleanup() {
         context.close()
     }
 
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
+
     void setup() {
+        context = new AnnotationConfigApplicationContext()
         AutoConfigurationPackages.register(context, "org.grails.datastore.gorm.mongodb.boot.autoconfigure")
 
         this.context.register(TestConfiguration, MongoAutoConfiguration.class,

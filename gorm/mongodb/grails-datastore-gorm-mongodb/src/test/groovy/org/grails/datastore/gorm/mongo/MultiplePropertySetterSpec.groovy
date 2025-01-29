@@ -2,13 +2,27 @@ package org.grails.datastore.gorm.mongo
 
 import grails.persistence.Entity
 import org.grails.datastore.mapping.mongo.MongoDatastore
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
 class MultiplePropertySetterSpec extends Specification {
 
-    @AutoCleanup @Shared MongoDatastore datastore = new MongoDatastore(Car)
+    @AutoCleanup @Shared MongoDatastore datastore
+
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+
+    void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl('test'))
+        datastore = new MongoDatastore(Car)
+    }
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
 
     void "test domain with multiple property setter"() {
         setup:

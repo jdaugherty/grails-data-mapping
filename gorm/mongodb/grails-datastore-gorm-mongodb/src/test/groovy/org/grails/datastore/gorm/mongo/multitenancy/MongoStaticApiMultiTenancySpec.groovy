@@ -9,15 +9,25 @@ import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoSettings
 import org.grails.datastore.mapping.multitenancy.exceptions.TenantNotFoundException
 import org.grails.datastore.mapping.multitenancy.resolvers.SystemPropertyTenantResolver
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
 class MongoStaticApiMultiTenancySpec extends Specification {
 
-    @Shared  @AutoCleanup MongoDatastore datastore
+    @AutoCleanup @Shared MongoDatastore datastore
+
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
 
     void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl('defaultDb'))
         Map config = [
                 "grails.gorm.multiTenancy.mode"               : "DISCRIMINATOR",
                 "grails.gorm.multiTenancy.tenantResolverClass": SystemPropertyTenantResolver,
@@ -29,7 +39,6 @@ class MongoStaticApiMultiTenancySpec extends Specification {
     void setup() {
         System.setProperty(SystemPropertyTenantResolver.PROPERTY_NAME, "")
     }
-
 
     void "test search"() {
         setup: "drop existing database"

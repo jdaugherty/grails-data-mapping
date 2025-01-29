@@ -14,14 +14,28 @@ import org.grails.datastore.mapping.mongo.MongoDatastore
 import org.grails.datastore.mapping.mongo.config.MongoMappingContext
 import org.grails.datastore.mapping.query.Query
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.Ignore
 import spock.lang.Issue
+import spock.lang.Shared
 import spock.lang.Specification
 
 /**
  * @author Graeme Rocher
  */
 class MongoDbDataStoreSpringInitializerSpec extends Specification{
+
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+
+    void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME))
+    }
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
 
     void "Test that MongoDbDatastoreSpringInitializer can setup GORM for MongoDB from scratch"() {
         when:"the initializer used to setup GORM for MongoDB"

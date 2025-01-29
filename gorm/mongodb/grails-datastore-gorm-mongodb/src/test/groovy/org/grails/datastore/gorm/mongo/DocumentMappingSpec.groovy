@@ -5,9 +5,9 @@ import grails.gorm.tests.GormDatastoreSpec
 import grails.mongodb.MongoEntity
 import grails.mongodb.geo.Point
 import org.bson.Document
-import org.grails.datastore.mapping.model.types.Custom
 
 import static grails.mongodb.mapping.MappingBuilder.*
+
 /**
  * Created by graemerocher on 02/02/2017.
  */

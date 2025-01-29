@@ -65,4 +65,5 @@ grails:
 ---
 grails:
     mongodb:
+        # url will be overridden and set in Application.groovy
         url: mongodb://localhost/mydb

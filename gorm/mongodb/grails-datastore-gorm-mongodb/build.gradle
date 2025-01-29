@@ -1,104 +1,54 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+version = projectVersion
+group = 'org.grails'
+
+ext {
+    pomArtifactId = 'grails-datastore-gorm-mongodb'
+    pomTitle = 'GORM for MongoDB'
+    pomDescription = 'Provides a GORM Object Mapping implementations for the MongoDB Document Database'
+    pomDevelopers = ['graemerocher': 'Graeme Rocher', 'jeffscottbrown': 'Jeff Brown', 'burtbeckwith': 'Burth Beckwith']
+    mavenPublishUrl = 'https://repo.grails.org/grails/libs-snapshots-local'
+}
+
 dependencies {
     implementation platform("org.grails:grails-bom:$grailsVersion")
-    api "org.mongodb:mongodb-driver-sync"
-    api "org.grails:grails-datastore-gorm-validation"
-    api "org.grails:grails-datastore-gorm"
-    api project(":grails-datastore-gorm-bson")
+    api 'org.mongodb:mongodb-driver-sync'
+    api project(':grails-datastore-gorm-validation')
+    api project(':grails-datastore-gorm')
+    api project(':gorm-mongodb-grails-datastore-gorm-bson')
 
-    implementation "org.grails:grails-core"
-    implementation "com.github.ben-manes.caffeine:caffeine"
+    implementation 'org.grails:grails-core'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
-    compileOnly "org.grails:grails-datastore-gorm-support", {
+    compileOnly project(':grails-datastore-gorm-support'), {
         exclude group:'org.grails', module:'grails-datastore-gorm-hibernate-core'
     }
-    compileOnly "jakarta.servlet:jakarta.servlet-api"
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
     
-    testImplementation "org.grails:grails-datastore-gorm-tck"
-    testImplementation "org.grails:grails-gorm-testing-support"
-    testImplementation "org.hibernate.validator:hibernate-validator"
-    testImplementation "org.grails:grails-datastore-gorm-support", {
-        exclude group: "org.grails", module:"grails-datastore-gorm-hibernate-core"
+    testImplementation project(':grails-datastore-gorm-tck')
+    testImplementation project(':grails-gorm-testing-support')
+    testImplementation 'org.hibernate.validator:hibernate-validator'
+    testImplementation project(':grails-datastore-gorm-support'), {
+        exclude group: 'org.grails', module:'grails-datastore-gorm-hibernate-core'
     }
-    testRuntimeOnly "org.springframework:spring-aop"
+
+    testImplementation "org.apache.groovy:groovy-json"
+    testImplementation "org.apache.groovy:groovy-templates"
+    testImplementation "org.apache.groovy:groovy-test-junit5"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.platform:junit-platform-runner"
+    testImplementation "org.spockframework:spock-core", { transitive = false }
+    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    testRuntimeOnly 'org.springframework:spring-aop'
 }
 
-
-test {
-    useJUnitPlatform()
-    if (isCiBuild) {
-        maxParallelForks = 1
-        forkEvery = 10
-    }
-    else {
-        maxParallelForks = 1
-        forkEvery = 30
-    }
-
-    jvmArgs = ['-Xmx1028M']
-    afterSuite {
-        System.out.print('.')
-        System.out.flush()
-    }
-
-    testLogging {
-        exceptionFormat TestExceptionFormat.FULL
-        showCauses true
-        showExceptions true
-        showStackTraces true
-    }
-
-    // Used in the TCK test to selectively enable/disable tests
-    systemProperty('mongodb.gorm.suite', 'true')
-}
-
-test.doFirst {
-    def toBaseClassRelativePathWithoutExtension = { String base, String classFile ->
-        if (classFile.startsWith(base)) {
-            def sansClass = classFile[0 .. classFile.size() - ".class".size() - 1]
-            def dollarIndex = sansClass.indexOf('$')
-            def baseClass = dollarIndex > 0 ? sansClass[0..dollarIndex - 1] : sansClass
-            def relative = baseClass - base - '/'
-            relative
-        }
-        else {
-            null
-        }
-    }
-    def tckClassesFile = project
-            .configurations
-            .testCompileClasspath
-            .resolvedConfiguration
-            .getResolvedArtifacts()
-            .find { resolved ->
-                resolved.moduleVersion.id.name == 'grails-datastore-gorm-tck'
-            }.file
-
-    def tckClassesDir = project.file("${project.buildDir}/tck")
-    copy {
-        from zipTree(tckClassesFile)
-        into tckClassesDir
-    }
-    copy {
-        from tckClassesDir
-        into sourceSets.test.output.classesDirs.find { it.path.contains('classes' + File.separator + 'groovy') }
-        include "**/*.class"
-        exclude { details ->
-            // Do not copy across any TCK class (or nested classes of that class)
-            // If there is a corresponding source file in the particular modules
-            // test source tree. Allows a module to override a test/helper.
-            if (!details.file.isFile()) {
-                return false
-            }
-            def candidatePath = details.file.absolutePath
-            def relativePath = toBaseClassRelativePathWithoutExtension(tckClassesDir.absolutePath, candidatePath)
-
-            if (relativePath == null) {
-                throw new IllegalStateException("$candidatePath does not appear to be in the TCK")
-            }
-
-            project.file("src/test/groovy/${relativePath}.groovy").exists()
-        }
-    }
-}
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/publish-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/tck-config.gradle')

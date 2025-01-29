@@ -2,6 +2,7 @@ package org.grails.datastore.gorm.mongo
 
 import grails.gorm.time.InstantConverter
 import grails.mongodb.MongoEntity
+import grails.mongodb.bootstrap.MongoDbDataStoreSpringInitializer
 import grails.persistence.Entity
 import org.bson.BsonDateTime
 import org.bson.BsonDocumentWrapper
@@ -18,6 +19,8 @@ import org.grails.datastore.bson.codecs.temporal.TemporalBsonConverter
 import org.grails.datastore.mapping.engine.EntityAccess
 import org.grails.datastore.mapping.model.PersistentProperty
 import org.grails.datastore.mapping.mongo.MongoDatastore
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.utility.DockerImageName
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -32,11 +35,23 @@ import static java.time.temporal.ChronoUnit.DAYS
  */
 class CustomCodecSpec extends Specification {
 
-    @AutoCleanup @Shared MongoDatastore datastore = new MongoDatastore(
-            ['grails.mongodb.codecs':[BirthdayCodec,
-                                      InstantAsBsonDateTimeCodec
-            ]],
-            Person, InstantHolder)
+    @AutoCleanup @Shared MongoDatastore datastore
+
+    @Shared MongoDBContainer mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:${System.getProperty("mongodbContainerVersion", "7.0.16")}"))
+
+    void setupSpec() {
+        mongoDBContainer.start()
+        System.setProperty('grails.mongodb.url', mongoDBContainer.getReplicaSetUrl(MongoDbDataStoreSpringInitializer.DEFAULT_DATABASE_NAME))
+        datastore = new MongoDatastore(
+                ['grails.mongodb.codecs':[BirthdayCodec,
+                                          InstantAsBsonDateTimeCodec
+                ]],
+                Person, InstantHolder)
+    }
+
+    void cleanupSpec() {
+        mongoDBContainer.stop()
+    }
 
     void "Test custom codecs"() {
         when:"A new person is saved"

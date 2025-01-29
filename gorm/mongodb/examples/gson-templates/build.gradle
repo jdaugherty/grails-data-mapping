@@ -1,5 +1,4 @@
 plugins {
-    id 'application'
     id 'groovy'
     id 'org.grails.grails-gsp'
     id 'org.grails.grails-web'
@@ -27,7 +26,7 @@ dependencies {
 
     implementation 'org.grails.plugins:gsp'
     implementation 'org.grails.plugins:hibernate5'
-    implementation project(':grails-datastore-gorm-mongodb')
+    implementation project(':gorm-mongodb-grails-datastore-gorm-mongodb')
 
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.springframework.boot:spring-boot-starter-logging'
@@ -35,17 +34,29 @@ dependencies {
 
     compileOnly 'jakarta.servlet:jakarta.servlet-api' // Provided by Tomcat
 
-    runtimeOnly project(':views-json-templates')
+    runtimeOnly project(':gorm-mongodb-json-templates')
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.apache.tomcat:tomcat-jdbc'
     runtimeOnly 'com.bertramlabs.plugins:asset-pipeline-grails'
 
-    testImplementation 'org.grails:views-json-testing-support'
-    testImplementation 'org.grails:grails-testing-support'
-
     integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
     integrationTestImplementation 'io.micronaut:micronaut-http-client:4.6.5'
     integrationTestImplementation 'io.micronaut:micronaut-jackson-databind:4.6.5'
+
+    testImplementation "io.micrometer:micrometer-core:latest.integration"
+    testImplementation "org.apache.groovy:groovy-test-junit5"
+    testImplementation "org.hibernate.validator:hibernate-validator"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.platform:junit-platform-runner"
+    testImplementation "org.spockframework:spock-core", { transitive = false }
+    testImplementation "org.testcontainers:mongodb:$testcontainersMongoDbVersion"
+    testImplementation 'org.grails:grails-testing-support'
+    testImplementation 'org.grails:views-json-testing-support'
 }
 
-compileJava.options.release = 17
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+apply from: rootProject.layout.projectDirectory.file('gradle/java-config.gradle')
+apply from: rootProject.layout.projectDirectory.file('gradle/test-config.gradle')
